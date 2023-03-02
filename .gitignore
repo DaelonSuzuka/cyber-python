@@ -1,0 +1,17 @@
+# python byproducts
+__pycache__
+
+.venv*
+
+*.pyc
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+
+.vscode
+
+.env
+.coverage
+.tox
