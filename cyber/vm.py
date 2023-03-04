@@ -113,15 +113,22 @@ class ContextModule:
         self.cyber = cyber
         self.name = name
         self.functions = []
+        self.variables = []
 
-    def decorator(self, name, nargs=0):
+    def function(self, name, nargs=0):
         def _decorator(func):
             self.functions.append((name, CyFunc(func), nargs))
 
         return _decorator
+    
+    # def variable(self, name, nargs=0):
+    #     def _decorator(func):
+    #         self.variables.append((name, CyFunc(func), nargs))
+
+    #     return _decorator
 
     def __enter__(self):
-        return self.decorator
+        return self
 
     def __exit__(self, *_):
         @CyLoadModuleFunc

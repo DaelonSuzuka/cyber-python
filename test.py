@@ -19,19 +19,19 @@ cyber = CyberVM()
         
 
 with cyber.module('core') as module:
-    @module('beep')
+    @module.function('beep')
     def beep(vm, args, nargs):
         print('beep')
         return 0
     
-    @module('beep2')
+    @module.function('print', 1)
     def beep2(vm, args, nargs):
-        print('beep beep')
+        s = cyValueToTempString(vm, args[0])
+        print(s.charz)
         return 0
 
 script = """
 print 'hello cyberworld!'
-beep()
--- beep2()
+
 """
 cyber.eval(script)
