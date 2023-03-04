@@ -57,6 +57,7 @@ import wtf 'wtf'
 print 'pls work'
 
 test.beep()
+wtf.boop()
 """
 
 cyber.eval(script)
