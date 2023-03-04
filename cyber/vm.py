@@ -1,5 +1,6 @@
 from ctypes import *
 from pathlib import Path
+import inspect
 
 
 class UserVM(Structure):
@@ -35,7 +36,11 @@ class ResultCode:
 
 # *************************************************************************** #
 
-lib = WinDLL((Path(__file__).parent / 'lib/cyber.dll').as_posix())
+# TODO: cross-platform
+path = (Path(__file__).parent / 'lib/cyber.dll').as_posix()
+# path = 'P:/_cyber/cyber/zig-out/lib/cyber.dll'
+
+lib = WinDLL(path)
 
 # CyUserVM* cyVmCreate();
 cyVmCreate = lib.cyVmCreate
@@ -93,6 +98,8 @@ cyValueGetOrAllocStringInfer = lib.cyValueGetOrAllocStringInfer
 cyValueGetOrAllocStringInfer.restype = CyValue
 cyValueGetOrAllocStringInfer.argtypes = [POINTER(UserVM), CStr]
 
+# --------------------------------------------------------------------------- #
+
 cyValueAsDouble = lib.cyValueAsDouble
 cyValueAsDouble.restype = c_double
 cyValueAsDouble.argtypes = [CyValue]
@@ -115,9 +122,44 @@ class ContextModule:
         self.functions = []
         self.variables = []
 
-    def function(self, name, nargs=0):
+    def function(self, name):
         def _decorator(func):
-            self.functions.append((name, CyFunc(func), nargs))
+            print(f'[ContextModule]: registering function: {name} {func}')
+
+            sig = inspect.signature(func)
+            nargs = len(sig.parameters)
+            return_type = sig.return_annotation
+
+            @CyFunc
+            def wrapper(vm, args, nargs):
+                _args = []
+                # automatically convert args based on registered function signature
+                for i, param in enumerate(sig.parameters.values()):
+                    if param.annotation == str:
+                        s = cyValueToTempString(vm, args[i])
+                        _args.append(s.charz.decode())
+                    elif param.annotation == int:
+                        val = int(cyValueAsDouble(args[i]))
+                        _args.append(val)
+                    elif param.annotation == float:
+                        val = cyValueAsDouble(args[i])
+                        _args.append(val)
+                    # elif param.annotation == bool:
+                    #     val = args[i] == cyValueTrue()
+                    #     _args.append(val)
+                    else: # raw cyValue, hopefully this doesn't happen
+                        _args.append(args[i])
+
+                ret = func(*_args)
+
+                # convert return type
+                # if return_type == None:
+                #     ret = cyValueNone()
+
+                return 0
+
+            self.functions.append((name, wrapper, nargs, wrapper, func))
+            return func
 
         return _decorator
     
@@ -133,7 +175,9 @@ class ContextModule:
     def __exit__(self, *_):
         @CyLoadModuleFunc
         def load_module(vm, mod):
-            for name, func, nargs in self.functions:
+            print(f'[ContextModule]: loading module: {self.name}')
+            for name, func, nargs, *_ in self.functions:
+                print(f'[ContextModule]: registering function: {name} {func}')
                 self.cyber.set_module_func(mod, name, nargs, func)
             return True
 
@@ -163,7 +207,8 @@ class CyberVM:
 
     def eval(self, src: str | bytes):
 
-        result = cyVmEval(self.vm, cstr(src), pointer(CyValue(0)))
+        out = CyValue()
+        result = cyVmEval(self.vm, cstr(src), pointer(out))
 
         # print(out)
 
