@@ -1,0 +1,3 @@
+[submodule "cyber"]
+	path = cyber
+	url = git@github.com:DaelonSuzuka/cyber.git
