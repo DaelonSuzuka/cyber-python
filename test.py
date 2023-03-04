@@ -19,12 +19,12 @@ cyber = CyberVM()
         
 
 with cyber.module('core') as module:
-    @module(0)
+    @module('beep')
     def beep(vm, args, nargs):
         print('beep')
         return 0
     
-    @module(0)
+    @module('beep2')
     def beep2(vm, args, nargs):
         print('beep beep')
         return 0

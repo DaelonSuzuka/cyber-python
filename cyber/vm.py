@@ -114,9 +114,9 @@ class ContextModule:
         self.name = name
         self.functions = []
 
-    def decorator(self, args):
+    def decorator(self, name, nargs=0):
         def _decorator(func):
-            self.functions.append((func.__name__, CyFunc(func), 0))
+            self.functions.append((name, CyFunc(func), nargs))
 
         return _decorator
 
