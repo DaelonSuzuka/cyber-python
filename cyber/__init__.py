@@ -1,1 +1,1 @@
-from .vm import CyberVM
+from .vm import *
