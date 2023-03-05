@@ -25,6 +25,28 @@ run: venv
 reload: venv
 	$(VENV_PYTHON) -m pip install -e .
 
+test: venv
+	$(VENV_PYTHON) test.py
+
+# **************************************************************************** #
+
+ZIG := zig build lib
+ZIGFLAGS := -Doptimize=ReleaseFast
+
+# cy_mac:
+# 	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-macos.12.none
+#	$(CP) cyber/zig-out/lib/cyber.dll src/cyber/lib/cyber.dll
+
+cy_win:
+	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-windows-gnu
+	$(CP) cyber/zig-out/lib/cyber.dll src/cyber/lib/release/cyber.dll
+
+cy_linux:
+	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-linux-gnu
+	$(CP) cyber/zig-out/lib/libcyber.so src/cyber/lib/release/libcyber.so
+
+# **************************************************************************** #
+
 #
 build: venv
 	$(VENV_PYTHON) -m build

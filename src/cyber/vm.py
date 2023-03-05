@@ -1,6 +1,7 @@
 from ctypes import *
 from pathlib import Path
 import inspect
+import sys
 
 
 class UserVM(Structure):
@@ -36,11 +37,19 @@ class ResultCode:
 
 # *************************************************************************** #
 
-# TODO: cross-platform
-path = (Path(__file__).parent / 'lib/cyber.dll').as_posix()
-# path = 'P:/_cyber/cyber/zig-out/lib/cyber.dll'
+base_path = Path(__file__).parent / 'lib'
+mode = 'release'
 
-lib = WinDLL(path)
+if sys.platform == 'win32':
+    path = base_path / mode / 'cyber.dll'
+    lib = WinDLL(path.as_posix())
+elif sys.platform == 'linux':
+    path = base_path / mode / 'libcyber.so'
+    lib = CDLL(path.as_posix())
+# elif sys.platform == 'darwin':
+#     path = base_path / mode / 'libcyber.so'
+#     lib = CDLL(path.as_posix())
+
 
 # CyUserVM* cyVmCreate();
 cyVmCreate = lib.cyVmCreate
