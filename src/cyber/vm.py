@@ -46,10 +46,13 @@ if sys.platform == 'win32':
 elif sys.platform == 'linux':
     path = base_path / mode / 'libcyber.so'
     lib = CDLL(path.as_posix())
-# elif sys.platform == 'darwin':
-#     path = base_path / mode / 'libcyber.so'
-#     lib = CDLL(path.as_posix())
-
+elif sys.platform == 'darwin'
+    if platform.machine() == 'arm64':
+        path = base_path / mode / 'libcyber-arm64.dylib'
+        lib = CDLL(path.as_posix())
+    else:
+        path = base_path / mode / 'libcyber.dylib'
+        lib = CDLL(path.as_posix())
 
 # CyUserVM* cyVmCreate();
 cyVmCreate = lib.cyVmCreate

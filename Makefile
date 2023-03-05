@@ -33,9 +33,13 @@ test: venv
 ZIG := zig build lib
 ZIGFLAGS := -Doptimize=ReleaseFast
 
-# cy_mac:
-# 	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-macos.12.none
-#	$(CP) cyber/zig-out/lib/cyber.dll src/cyber/lib/cyber.dll
+cy_mac_arm64:
+	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=aarch64-macos.12.none
+	$(CP) cyber/zig-out/lib/libcyber.dylib src/cyber/lib/release/libcyber-arm64.dylib
+
+cy_mac:
+	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-macos.12.none
+	$(CP) cyber/zig-out/lib/libcyber.dylib src/cyber/lib/release/libcyber.dylib
 
 cy_win:
 	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-windows-gnu
