@@ -19,7 +19,7 @@ endif
 
 # run the application
 run: venv
-	$(VENV_PYTHON) src/main.py
+	$(VENV_PYTHON) main.py
 
 test: venv
 	$(VENV_PYTHON) test.py
@@ -29,25 +29,25 @@ test: venv
 ZIG := zig build lib
 ZIGFLAGS := -Doptimize=ReleaseFast -Dcpu=baseline
 
-# generate src/cyber/lib.py from cyber/src/cyber.h
+# generate cyber/lib.py from src/cyber/cyber.h
 bindings: venv
 	$(VENV_PYTHON) tools/generate_bindings.py
 
 # build cyber for the current platform in debug mode
 build_lib:
-	cd cyber && $(ZIG)
-	cp cyber/zig-out/lib/* src/cyber/lib
+	cd src/cyber && $(ZIG)
+	cp src/cyber/zig-out/lib/* cyber/lib
 
 # build cyber for all platforms in release mode
 build_libs:
-	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-windows-gnu
-	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-linux-gnu
-#	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-macos.12.none
-#	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=aarch64-macos.12.none
-	cp cyber/zig-out/lib/cyber.dll src/cyber/lib/cyber.dll
-	cp cyber/zig-out/lib/libcyber.so src/cyber/lib/libcyber.so
-#	cp cyber/zig-out/lib/libcyber.dylib src/cyber/lib/libcyber.dylib
-#	cp cyber/zig-out/lib/libcyber.dylib src/cyber/lib/libcyber-arm64.dylib
+	cd src/cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-windows-gnu
+	cd src/cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-linux-gnu
+#	cd src/cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-macos.12.none
+#	cd src/cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=aarch64-macos.12.none
+	cp src/cyber/zig-out/lib/cyber.dll cyber/lib/cyber.dll
+	cp src/cyber/zig-out/lib/libcyber.so cyber/lib/libcyber.so
+#	cp src/cyber/zig-out/lib/libcyber.dylib cyber/lib/libcyber.dylib
+#	cp src/cyber/zig-out/lib/libcyber.dylib cyber/lib/libcyber-arm64.dylib
 
 # **************************************************************************** #
 
