@@ -1,4 +1,4 @@
-from src.cyber import *
+from cyber import *
 
 
 cyber = CyberVM()
