@@ -21,41 +21,45 @@ endif
 run: venv
 	$(VENV_PYTHON) src/main.py
 
-# reinstall this package to the virtualenv
-reload: venv
-	$(VENV_PYTHON) -m pip install -e .
-
 test: venv
 	$(VENV_PYTHON) test.py
 
 # **************************************************************************** #
 
 ZIG := zig build lib
-ZIGFLAGS := -Doptimize=ReleaseFast
+ZIGFLAGS := -Doptimize=ReleaseFast -Dcpu=baseline
 
-cy_mac_arm64:
-	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=aarch64-macos.12.none
-	$(CP) cyber/zig-out/lib/libcyber.dylib src/cyber/lib/release/libcyber-arm64.dylib
+# generate src/cyber/lib.py from cyber/src/cyber.h
+bindings: venv
+	$(VENV_PYTHON) tools/generate_bindings.py
 
-cy_mac:
-	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-macos.12.none
-	$(CP) cyber/zig-out/lib/libcyber.dylib src/cyber/lib/release/libcyber.dylib
+# build cyber for the current platform in debug mode
+build_lib:
+	cd cyber && $(ZIG)
+	cp cyber/zig-out/lib/* src/cyber/lib
 
-cy_win:
+# build cyber for all platforms in release mode
+build_libs:
 	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-windows-gnu
-	$(CP) cyber/zig-out/lib/cyber.dll src/cyber/lib/release/cyber.dll
-
-cy_linux:
 	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-linux-gnu
-	$(CP) cyber/zig-out/lib/libcyber.so src/cyber/lib/release/libcyber.so
+#	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=x86_64-macos.12.none
+#	cd cyber && $(ZIG) $(ZIGFLAGS) -Dtarget=aarch64-macos.12.none
+	cp cyber/zig-out/lib/cyber.dll src/cyber/lib/cyber.dll
+	cp cyber/zig-out/lib/libcyber.so src/cyber/lib/libcyber.so
+#	cp cyber/zig-out/lib/libcyber.dylib src/cyber/lib/libcyber.dylib
+#	cp cyber/zig-out/lib/libcyber.dylib src/cyber/lib/libcyber-arm64.dylib
 
 # **************************************************************************** #
 
-#
+# reinstall this package to the virtualenv
+reload: venv
+	$(VENV_PYTHON) -m pip install -e .
+
+# build the package
 build: venv
 	$(VENV_PYTHON) -m build
 
-#
+# upload the built package to pypi using twine
 publish: venv
 	$(VENV_PYTHON) -m twine upload dist/* -u __token__
 
@@ -76,7 +80,6 @@ clean:
 	-$(RM) dist
 	-$(RM) qtstrap.egg-info
 
-
 # **************************************************************************** #
 # python venv settings
 VENV_NAME := .venv
@@ -92,8 +95,7 @@ ifeq ($(OS),Windows_NT)
 	PYTHON := python
 	VENV_PYTHON := $(VENV)\$(PYTHON)
 	VENV_PYINSTALLER := $(VENV)\pyinstaller
-	RM := -rd /s /q 
-	CP := copy
+	RM := rm
 else
 	VENV_DIR := $(VENV_NAME)
 	VENV_CANARY_DIR := $(VENV_DIR)/canary
@@ -105,7 +107,6 @@ else
 	VENV_PYTHON := $(VENV)/$(PYTHON)
 	VENV_PYINSTALLER := $(VENV)/pyinstaller
 	RM := rm -rf 
-	CP := cp
 endif
 
 # Add this as a requirement to any make target that relies on the venv
@@ -122,11 +123,11 @@ $(VENV_CANARY_FILE): $(REQUIREMENTS)
 	$(VENV_PYTHON) -m pip install -r $(REQUIREMENTS)
 	-$(RM) $(VENV_CANARY_DIR)
 	-mkdir $(VENV_CANARY_DIR)
-	-$(CP) $(REQUIREMENTS) $(VENV_CANARY_FILE)
+	-cp $(REQUIREMENTS) $(VENV_CANARY_FILE)
 
 # forcibly update the canary file
 canary: $(VENV_CANARY_DIR)
-	$(CP) $(REQUIREMENTS) $(VENV_CANARY_FILE)
+	cp $(REQUIREMENTS) $(VENV_CANARY_FILE)
 
 # update requirements.txt to match the state of the venv
 freeze_reqs: venv
@@ -138,7 +139,7 @@ update_venv: venv
 	$(VENV_PYTHON) -m pip install --upgrade -r $(REQUIREMENTS)
 	-$(RM) $(VENV_CANARY_DIR)
 	-mkdir $(VENV_CANARY_DIR)
-	-$(CP) $(REQUIREMENTS) $(VENV_CANARY_FILE)
+	-cp $(REQUIREMENTS) $(VENV_CANARY_FILE)
 
 # remove all packages from the venv
 clean_venv:
