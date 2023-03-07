@@ -16,29 +16,29 @@ def cstr(s) -> CStr:
 
 
 def cyvalue_to_py(vm, cyvalue):
-        match CyType(cyValueGetTypeId(cyvalue).value):
-            case CyType.CY_TypeNone:
-                return None
-            case CyType.CY_TypeBoolean:
-                return cyValueAsBool(cyvalue)
-            case CyType.CY_TypeInteger:
-                return cyValueAsInteger(cyvalue)
-            case CyType.CY_TypeNumber:
-                return cyValueAsNumber(cyvalue)
-            case CyType.CY_TypeStaticAstring:
-                return cyValueToTempString(vm, cyvalue).charz.decode()
-            case CyType.CY_TypeStaticUstring:
-                return cyValueToTempString(vm, cyvalue).charz.decode()
-            case CyType.CY_TypeAstring:
-                return cyValueToTempString(vm, cyvalue).charz.decode()
-            case CyType.CY_TypeUstring:
-                return cyValueToTempString(vm, cyvalue).charz.decode()
-            case CyType.CY_TypeStringSlice:
-                return cyValueToTempString(vm, cyvalue).charz.decode()
-            case CyType.CY_TypeRawString:
-                return cyValueToTempRawString(vm, cyvalue).charz
-            case CyType.CY_TypeRawStringSlice:
-                return cyValueToTempRawString(vm, cyvalue).charz
+    match CyType(cyValueGetTypeId(cyvalue).value):
+        case CyType.CY_TypeNone:
+            return None
+        case CyType.CY_TypeBoolean:
+            return cyValueAsBool(cyvalue)
+        case CyType.CY_TypeInteger:
+            return cyValueAsInteger(cyvalue)
+        case CyType.CY_TypeNumber:
+            return cyValueAsNumber(cyvalue)
+        case CyType.CY_TypeStaticAstring:
+            return cyValueToTempString(vm, cyvalue).charz.decode()
+        case CyType.CY_TypeStaticUstring:
+            return cyValueToTempString(vm, cyvalue).charz.decode()
+        case CyType.CY_TypeAstring:
+            return cyValueToTempString(vm, cyvalue).charz.decode()
+        case CyType.CY_TypeUstring:
+            return cyValueToTempString(vm, cyvalue).charz.decode()
+        case CyType.CY_TypeStringSlice:
+            return cyValueToTempString(vm, cyvalue).charz.decode()
+        case CyType.CY_TypeRawString:
+            return cyValueToTempRawString(vm, cyvalue).charz
+        case CyType.CY_TypeRawStringSlice:
+            return cyValueToTempRawString(vm, cyvalue).charz
 
 
 class ContextModule:
