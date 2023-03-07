@@ -1,6 +1,9 @@
 from ctypes import *
 import inspect
 from .lib import *
+from . import lib
+from textwrap import dedent
+import builtins
 
 
 # *************************************************************************** #
@@ -8,8 +11,34 @@ from .lib import *
 
 def cstr(s) -> CStr:
     if isinstance(s, str):
-        s = s.encode()
+        s = dedent(s).encode()
     return CStr(c_char_p(s), len(s))
+
+
+def cyvalue_to_py(vm, cyvalue):
+        match CyType(cyValueGetTypeId(cyvalue).value):
+            case CyType.CY_TypeNone:
+                return None
+            case CyType.CY_TypeBoolean:
+                return cyValueAsBool(cyvalue)
+            case CyType.CY_TypeInteger:
+                return cyValueAsInteger(cyvalue)
+            case CyType.CY_TypeNumber:
+                return cyValueAsNumber(cyvalue)
+            case CyType.CY_TypeStaticAstring:
+                return cyValueToTempString(vm, cyvalue).charz.decode()
+            case CyType.CY_TypeStaticUstring:
+                return cyValueToTempString(vm, cyvalue).charz.decode()
+            case CyType.CY_TypeAstring:
+                return cyValueToTempString(vm, cyvalue).charz.decode()
+            case CyType.CY_TypeUstring:
+                return cyValueToTempString(vm, cyvalue).charz.decode()
+            case CyType.CY_TypeStringSlice:
+                return cyValueToTempString(vm, cyvalue).charz.decode()
+            case CyType.CY_TypeRawString:
+                return cyValueToTempRawString(vm, cyvalue).charz
+            case CyType.CY_TypeRawStringSlice:
+                return cyValueToTempRawString(vm, cyvalue).charz
 
 
 class ContextModule:
@@ -30,30 +59,34 @@ class ContextModule:
             @CyFunc
             def wrapper(vm, args, nargs):
                 _args = []
-                # automatically convert args based on registered function signature
+                # convert args based on registered function signature
                 for i, param in enumerate(sig.parameters.values()):
-                    if param.annotation == str:
-                        s = cyValueToTempString(vm, args[i])
-                        _args.append(s.charz.decode())
-                    elif param.annotation == int:
-                        val = int(cyValueAsNumber(args[i]))
-                        _args.append(val)
-                    elif param.annotation == float:
-                        val = cyValueAsNumber(args[i])
-                        _args.append(val)
-                    # elif param.annotation == bool:
-                    #     val = args[i] == cyValueTrue()
-                    #     _args.append(val)
-                    else:   # raw cyValue, hopefully this doesn't happen
-                        _args.append(args[i])
+                    match param.annotation:
+                        case builtins.str:
+                            _args.append(cyValueToTempString(vm, args[i]).charz.decode())
+                        case builtins.int:
+                            _args.append(int(cyValueAsNumber(args[i])))
+                        case builtins.float:
+                            _args.append(cyValueAsNumber(args[i]))
+                        case builtins.bool:
+                            _args.append(cyValueToBool(args[i]))
+                        case lib.CyValue: # raw cyValue
+                            _args.append(args[i])
+                        case _: # no type specified, try to auto-convert
+                            _args.append(cyvalue_to_py(vm, args[i]))
 
-                ret = func(*_args)
+                raw_ret = func(*_args)
+
+                ret = 0
 
                 # convert return type
-                # if return_type == None:
-                #     ret = cyValueNone()
+                # match return_type:
+                    # case None:
+                    #     ret = cyValueNone()
+                    # case builtins.str:
+                    #     ret = cyValueGetOrAllocStringInfer(vm, cstr(raw_ret))
 
-                return 0
+                return ret
 
             self.functions.append((name, wrapper, nargs, wrapper, func))
             return func
@@ -83,8 +116,24 @@ class ContextModule:
         return
 
 
+class CyberTokenError(Exception):
+    ...
+class CyberParseError(Exception):
+    ...
+class CyberCompileError(Exception):
+    ...
+class CyberPanicError(Exception):
+    ...
+class CyberUnknownError(Exception):
+    ...
+
+
 class CyberVM:
     def __init__(self) -> None:
+        self.last_result = None
+        self.last_output_type = None
+        self.last_output = None
+
         self.vm = cyVmCreate()
         self.modules = []
 
@@ -103,11 +152,24 @@ class CyberVM:
         return mod
 
     def eval(self, src: str | bytes):
-
         out = CyValue()
         result = cyVmEval(self.vm, cstr(src), pointer(out))
-
-        # print(out)
-
-        # if result != ResultCode.CY_Success:
-        #     pass
+        self.last_result = CyResultCode(result)
+        if self.last_result != CyResultCode.CY_Success:
+            match self.last_result:
+                case CyResultCode.CY_ErrorToken:
+                    raise CyberTokenError
+                case CyResultCode.CY_ErrorParse:
+                    raise CyberParseError
+                case CyResultCode.CY_ErrorCompile:
+                    raise CyberCompileError
+                case CyResultCode.CY_ErrorPanic:
+                    raise CyberPanicError
+                case CyResultCode.CY_ErrorUnknown:
+                    raise CyberUnknownError
+            raise CyberUnknownError
+            return
+        
+        self.last_output_type = CyType(cyValueGetTypeId(out).value)
+        self.last_output = cyvalue_to_py(self.vm, out)
+        return self.last_output
