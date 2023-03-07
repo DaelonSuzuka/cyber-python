@@ -34,7 +34,7 @@ class Writer:
         self.level -= 1
 
 
-with open('cyber/src/cyber.h') as f:
+with open('src/cyber/src/cyber.h') as f:
     raw = f.read()
 
 output = ''
@@ -68,6 +68,7 @@ w += ''
 w += 'from ctypes import *'
 w += 'from pathlib import Path'
 w += 'import sys'
+w += 'from enum import Enum'
 w += ''
 
 w += """
@@ -88,7 +89,8 @@ elif sys.platform == 'darwin':
         lib = CDLL(path.as_posix())
 """
 w += ''
-
+w += '# GENERATED FILE DO NOT EDIT #'
+w += ''
 
 types = {
     'bool': 'c_bool',
@@ -115,57 +117,64 @@ def typedef_int(w, d):
 
 def typedef_struct(w, d):
     m = re.match(r'typedef struct (\w+) ({.*})?', d.replace('\n', ''))
-    t = m[1]
-    fields = m[2]
-    types[f'{t}*'] = f'POINTER({t})'
-    w += f'class {m[1]}(Structure):'
+    struct_name = m[1]
+    types[f'{struct_name}*'] = f'POINTER({struct_name})'
+    fields = []
+    if m[2]:
+        for f in m[2][1:-1].split(';'):
+            if f:
+                parts = f.strip().split(' ')
+                t = types.get(parts[0], parts[0])
+                fields.append(f"('{parts[1]}', {t})")
 
+    w += f'class {struct_name}(Structure):'
     with w:
         if fields:
-            _fields = []
-            for f in fields[1:-1].split(';'):
-                if f:
-                    parts = f.strip().split(' ')
-                    t = types.get(parts[0], parts[0])
-                    _fields.append(f"('{parts[1]}', {t})")
-            w += f"_fields_ = [{', '.join(_fields)}]"
+            w += f"_fields_ = [{', '.join(fields)}]"
         else:
             w += '...'
 
-
 def typedef_enum(w, d):
-    w += f'# enum'
+    m = re.match(r'typedef enum ({.*})? (\w+);', d.replace('\n', ''))
+    values = m[1]
+    enum_name = m[2]
+    items = [v.strip().replace(' = 0', '') for v in values[1:-1].split(',') if v]
+
+    w += f'class {enum_name}(Enum):'
+    with w:
+        for i, item in enumerate(items):
+            w += f'{item} = {i}'
 
 
 def typedef_funcptr_def(w, d):
     m = re.match(r'typedef (\w+) \(\*(\w+)\)(.*);', d)
-    t = m[2]
+    type_name = m[2]
     args = m[3][1:-1].split(', ')
     arg_types = [a.split(' ')[0] for a in args]
-    w += f'# {d}'
     argtypes = [types.get(m[1], m[1])]
     for arg in arg_types:
         argtypes.append(types.get(arg, arg))
-    w += f'{t} = CFUNCTYPE({", ".join(argtypes)})'
+
+    w += f'# {d}'
+    w += f'{type_name} = CFUNCTYPE({", ".join(argtypes)})'
 
 
 def func_def(w, d):
-    w += f'# {d}'
     m = re.match(r'(\w+\*?) (\w+)(.*);', d)
+    func_name = m[2]
     ret = m[1]
     args = m[3][1:-1].split(', ')
     arg_types = [a.split(' ')[0] for a in args]
-    w += f'{m[2]} = lib.{m[2]}'
-
-    if ret != 'void':
-        w += f'{m[2]}.restype = {types.get(ret, ret)}'
-
     argtypes = []
     for arg in arg_types:
         argtypes.append(types.get(arg, arg))
-    w += f'{m[2]}.argtypes = [{", ".join(argtypes)}]'
 
-    w += ''
+    w += f'# {d}'
+    w += f'{func_name} = lib.{func_name}'
+    if ret != 'void':
+        w += f'{func_name}.restype = {types.get(ret, ret)}'
+    w += f'{func_name}.argtypes = [{", ".join(argtypes)}]'
+
 
 
 for d in definitions:
@@ -182,6 +191,7 @@ for d in definitions:
         if '=' in d:
             continue
         func_def(w, d)
+    w += ''
 
-with open('src/cyber/lib.py', 'w') as f:
+with open('cyber/lib.py', 'w') as f:
     f.write(w.join(''))

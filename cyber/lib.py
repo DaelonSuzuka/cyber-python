@@ -1,8 +1,9 @@
-#! GENERATED FILE DO NOT EDIT #
+# GENERATED FILE DO NOT EDIT #
 
 from ctypes import *
 from pathlib import Path
 import sys
+from enum import Enum
 
 
 base_path = Path(__file__).parent / 'lib'
@@ -22,22 +23,68 @@ elif sys.platform == 'darwin':
         lib = CDLL(path.as_posix())
 
 
+# GENERATED FILE DO NOT EDIT #
+
 class CyUserVM(Structure):
     ...
+
 class CyModule(Structure):
     ...
+
 class CyValue(c_uint64):
     ...
-# enum
-# enum
+
+class CyResultCode(Enum):
+    CY_Success = 0
+    CY_ErrorToken = 1
+    CY_ErrorParse = 2
+    CY_ErrorCompile = 3
+    CY_ErrorPanic = 4
+    CY_ErrorUnknown = 5
+
+class CyType(Enum):
+    CY_TypeNone = 0
+    CY_TypeBoolean = 1
+    CY_TypeError = 2
+    CY_TypeStaticAstring = 3
+    CY_TypeStaticUstring = 4
+    CY_TypeUserTag = 5
+    CY_TypeUserTagLiteral = 6
+    CY_TypeInteger = 7
+    CY_TypeNumber = 8
+    CY_TypeList = 9
+    CY_TypeListIter = 10
+    CY_TypeMap = 11
+    CY_TypeMapIter = 12
+    CY_TypeClosure = 13
+    CY_TypeLambda = 14
+    CY_TypeAstring = 15
+    CY_TypeUstring = 16
+    CY_TypeStringSlice = 17
+    CY_TypeRawString = 18
+    CY_TypeRawStringSlice = 19
+    CY_TypeFiber = 20
+    CY_TypeBox = 21
+    CY_TypeNativeFunc1 = 22
+    CY_TypeTccState = 23
+    CY_TypeOpaquePtr = 24
+    CY_TypeFile = 25
+    CY_TypeDir = 26
+    CY_TypeDirIter = 27
+    CY_TypeSymbol = 28
+
 class CStr(Structure):
     _fields_ = [('charz', c_char_p), ('len', c_size_t)]
+
 class CyTypeId(c_uint32):
     ...
+
 # typedef CyValue (*CyFunc)(CyUserVM* vm, CyValue* args, uint8_t nargs);
 CyFunc = CFUNCTYPE(CyValue, POINTER(CyUserVM), POINTER(CyValue), c_uint8)
+
 # typedef bool (*CyLoadModuleFunc)(CyUserVM* vm, CyModule* mod);
 CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyUserVM), POINTER(CyModule))
+
 # CyUserVM* cyVmCreate();
 cyVmCreate = lib.cyVmCreate
 cyVmCreate.restype = POINTER(CyUserVM)
@@ -199,4 +246,3 @@ cyValueToTempString.argtypes = [POINTER(CyUserVM), CyValue]
 cyValueToTempRawString = lib.cyValueToTempRawString
 cyValueToTempRawString.restype = CStr
 cyValueToTempRawString.argtypes = [POINTER(CyUserVM), CyValue]
-
