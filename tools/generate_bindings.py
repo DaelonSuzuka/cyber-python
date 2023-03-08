@@ -97,6 +97,7 @@ types = {
     'double': 'c_double',
     'void*': 'c_void_p',
     'char*': 'c_char_p',
+    'const char*': 'c_char_p',
     'size_t': 'c_size_t',
     'uint8_t': 'c_uint8',
     'uint64_t': 'c_uint64',
@@ -124,8 +125,10 @@ def typedef_struct(w, d):
         for f in m[2][1:-1].split(';'):
             if f:
                 parts = f.strip().split(' ')
-                t = types.get(parts[0], parts[0])
-                fields.append(f"('{parts[1]}', {t})")
+                name = parts[-1]
+                c_type = ' '.join(parts[:-1])
+                py_type = types.get(c_type, c_type)
+                fields.append(f"('{name}', {py_type})")
 
     w += f'class {struct_name}(Structure):'
     with w:
@@ -133,6 +136,7 @@ def typedef_struct(w, d):
             w += f"_fields_ = [{', '.join(fields)}]"
         else:
             w += '...'
+
 
 def typedef_enum(w, d):
     m = re.match(r'typedef enum ({.*})? (\w+);', d.replace('\n', ''))
@@ -176,8 +180,9 @@ def func_def(w, d):
     w += f'{func_name}.argtypes = [{", ".join(argtypes)}]'
 
 
-
 for d in definitions:
+    if d.startswith('//'):
+        continue
     if 'typedef' in d:
         if '(*' in d:
             typedef_funcptr_def(w, d)
