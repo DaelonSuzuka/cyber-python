@@ -25,7 +25,7 @@ elif sys.platform == 'darwin':
 
 # GENERATED FILE DO NOT EDIT #
 
-class CyUserVM(Structure):
+class CyVM(Structure):
     ...
 
 class CyModule(Structure):
@@ -79,68 +79,73 @@ class CStr(Structure):
 class CyTypeId(c_uint32):
     ...
 
-# typedef CyValue (*CyFunc)(CyUserVM* vm, CyValue* args, uint8_t nargs);
-CyFunc = CFUNCTYPE(CyValue, POINTER(CyUserVM), POINTER(CyValue), c_uint8)
+# typedef CyValue (*CyFunc)(CyVM* vm, CyValue* args, uint8_t nargs);
+CyFunc = CFUNCTYPE(CyValue, POINTER(CyVM), POINTER(CyValue), c_uint8)
 
-# typedef bool (*CyLoadModuleFunc)(CyUserVM* vm, CyModule* mod);
-CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyUserVM), POINTER(CyModule))
+# typedef bool (*CyLoadModuleFunc)(CyVM* vm, CyModule* mod);
+CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyVM), POINTER(CyModule))
 
-# CyUserVM* cyVmCreate();
+# CyVM* cyVmCreate();
 cyVmCreate = lib.cyVmCreate
-cyVmCreate.restype = POINTER(CyUserVM)
+cyVmCreate.restype = POINTER(CyVM)
 cyVmCreate.argtypes = []
 
-# void cyVmDestroy(CyUserVM* vm);
+# void cyVmDestroy(CyVM* vm);
 cyVmDestroy = lib.cyVmDestroy
-cyVmDestroy.argtypes = [POINTER(CyUserVM)]
+cyVmDestroy.argtypes = [POINTER(CyVM)]
 
-# CyResultCode cyVmEval(CyUserVM* vm, CStr src, CyValue* outVal);
+# CyResultCode cyVmEval(CyVM* vm, CStr src, CyValue* outVal);
 cyVmEval = lib.cyVmEval
 cyVmEval.restype = c_int
-cyVmEval.argtypes = [POINTER(CyUserVM), CStr, POINTER(CyValue)]
+cyVmEval.argtypes = [POINTER(CyVM), CStr, POINTER(CyValue)]
 
-# CStr cyVmGetLastErrorReport(CyUserVM* vm);
+# CyResultCode cyVmValidate(CyVM* vm, CStr src);
+cyVmValidate = lib.cyVmValidate
+cyVmValidate.restype = c_int
+cyVmValidate.argtypes = [POINTER(CyVM), CStr]
+
+# CStr cyVmGetLastErrorReport(CyVM* vm);
 cyVmGetLastErrorReport = lib.cyVmGetLastErrorReport
 cyVmGetLastErrorReport.restype = CStr
-cyVmGetLastErrorReport.argtypes = [POINTER(CyUserVM)]
+cyVmGetLastErrorReport.argtypes = [POINTER(CyVM)]
 
-# void cyVmRelease(CyUserVM* vm, CyValue val);
+# void cyVmRelease(CyVM* vm, CyValue val);
 cyVmRelease = lib.cyVmRelease
-cyVmRelease.argtypes = [POINTER(CyUserVM), CyValue]
+cyVmRelease.argtypes = [POINTER(CyVM), CyValue]
 
-# void cyVmRetain(CyUserVM* vm, CyValue val);
+# void cyVmRetain(CyVM* vm, CyValue val);
 cyVmRetain = lib.cyVmRetain
-cyVmRetain.argtypes = [POINTER(CyUserVM), CyValue]
+cyVmRetain.argtypes = [POINTER(CyVM), CyValue]
 
-# void* cyVmGetUserData(CyUserVM* vm);
+# void* cyVmGetUserData(CyVM* vm);
 cyVmGetUserData = lib.cyVmGetUserData
 cyVmGetUserData.restype = c_void_p
-cyVmGetUserData.argtypes = [POINTER(CyUserVM)]
+cyVmGetUserData.argtypes = [POINTER(CyVM)]
 
-# void cyVmSetUserData(CyUserVM* vm, void* userData);
+# void cyVmSetUserData(CyVM* vm, void* userData);
 cyVmSetUserData = lib.cyVmSetUserData
-cyVmSetUserData.argtypes = [POINTER(CyUserVM), c_void_p]
+cyVmSetUserData.argtypes = [POINTER(CyVM), c_void_p]
 
-# void cyVmAddModuleLoader(CyUserVM* vm, CStr name, CyLoadModuleFunc func);
+# void cyVmAddModuleLoader(CyVM* vm, CStr name, CyLoadModuleFunc func);
 cyVmAddModuleLoader = lib.cyVmAddModuleLoader
-cyVmAddModuleLoader.argtypes = [POINTER(CyUserVM), CStr, CyLoadModuleFunc]
+cyVmAddModuleLoader.argtypes = [POINTER(CyVM), CStr, CyLoadModuleFunc]
 
-# void cyVmSetModuleFunc(CyUserVM* vm, CyModule* mod, CStr name, uint32_t numParams, CyFunc func);
+# void cyVmSetModuleFunc(CyVM* vm, CyModule* mod, CStr name, uint32_t numParams, CyFunc func);
 cyVmSetModuleFunc = lib.cyVmSetModuleFunc
-cyVmSetModuleFunc.argtypes = [POINTER(CyUserVM), POINTER(CyModule), CStr, c_uint32, CyFunc]
+cyVmSetModuleFunc.argtypes = [POINTER(CyVM), POINTER(CyModule), CStr, c_uint32, CyFunc]
 
-# void cyVmSetModuleVar(CyUserVM* vm, CyModule* mod, CStr name, CyValue val);
+# void cyVmSetModuleVar(CyVM* vm, CyModule* mod, CStr name, CyValue val);
 cyVmSetModuleVar = lib.cyVmSetModuleVar
-cyVmSetModuleVar.argtypes = [POINTER(CyUserVM), POINTER(CyModule), CStr, CyValue]
+cyVmSetModuleVar.argtypes = [POINTER(CyVM), POINTER(CyModule), CStr, CyValue]
 
-# void* cyVmAlloc(CyUserVM* vm, size_t size);
+# void* cyVmAlloc(CyVM* vm, size_t size);
 cyVmAlloc = lib.cyVmAlloc
 cyVmAlloc.restype = c_void_p
-cyVmAlloc.argtypes = [POINTER(CyUserVM), c_size_t]
+cyVmAlloc.argtypes = [POINTER(CyVM), c_size_t]
 
-# void cyVmFree(CyUserVM* vm, void* ptr, size_t len);
+# void cyVmFree(CyVM* vm, void* ptr, size_t len);
 cyVmFree = lib.cyVmFree
-cyVmFree.argtypes = [POINTER(CyUserVM), c_void_p, c_size_t]
+cyVmFree.argtypes = [POINTER(CyVM), c_void_p, c_size_t]
 
 # CyValue cyValueNone();
 cyValueNone = lib.cyValueNone
@@ -167,45 +172,45 @@ cyValueInteger = lib.cyValueInteger
 cyValueInteger.restype = CyValue
 cyValueInteger.argtypes = [c_int]
 
-# CyValue cyValueGetOrAllocStringInfer(CyUserVM* vm, CStr str);
+# CyValue cyValueGetOrAllocStringInfer(CyVM* vm, CStr str);
 cyValueGetOrAllocStringInfer = lib.cyValueGetOrAllocStringInfer
 cyValueGetOrAllocStringInfer.restype = CyValue
-cyValueGetOrAllocStringInfer.argtypes = [POINTER(CyUserVM), CStr]
+cyValueGetOrAllocStringInfer.argtypes = [POINTER(CyVM), CStr]
 
-# CyValue cyValueGetOrAllocAstring(CyUserVM* vm, CStr str);
+# CyValue cyValueGetOrAllocAstring(CyVM* vm, CStr str);
 cyValueGetOrAllocAstring = lib.cyValueGetOrAllocAstring
 cyValueGetOrAllocAstring.restype = CyValue
-cyValueGetOrAllocAstring.argtypes = [POINTER(CyUserVM), CStr]
+cyValueGetOrAllocAstring.argtypes = [POINTER(CyVM), CStr]
 
-# CyValue cyValueGetOrAllocUstring(CyUserVM* vm, CStr str, uint32_t charLen);
+# CyValue cyValueGetOrAllocUstring(CyVM* vm, CStr str, uint32_t charLen);
 cyValueGetOrAllocUstring = lib.cyValueGetOrAllocUstring
 cyValueGetOrAllocUstring.restype = CyValue
-cyValueGetOrAllocUstring.argtypes = [POINTER(CyUserVM), CStr, c_uint32]
+cyValueGetOrAllocUstring.argtypes = [POINTER(CyVM), CStr, c_uint32]
 
-# CyValue cyValueAllocList(CyUserVM* vm);
+# CyValue cyValueAllocList(CyVM* vm);
 cyValueAllocList = lib.cyValueAllocList
 cyValueAllocList.restype = CyValue
-cyValueAllocList.argtypes = [POINTER(CyUserVM)]
+cyValueAllocList.argtypes = [POINTER(CyVM)]
 
-# CyValue cyValueAllocMap(CyUserVM* vm);
+# CyValue cyValueAllocMap(CyVM* vm);
 cyValueAllocMap = lib.cyValueAllocMap
 cyValueAllocMap.restype = CyValue
-cyValueAllocMap.argtypes = [POINTER(CyUserVM)]
+cyValueAllocMap.argtypes = [POINTER(CyVM)]
 
-# CyValue cyValueAllocNativeFunc(CyUserVM* vm, CyFunc func, uint32_t numParams);
+# CyValue cyValueAllocNativeFunc(CyVM* vm, CyFunc func, uint32_t numParams);
 cyValueAllocNativeFunc = lib.cyValueAllocNativeFunc
 cyValueAllocNativeFunc.restype = CyValue
-cyValueAllocNativeFunc.argtypes = [POINTER(CyUserVM), CyFunc, c_uint32]
+cyValueAllocNativeFunc.argtypes = [POINTER(CyVM), CyFunc, c_uint32]
 
-# CyValue cyValueAllocOpaquePtr(CyUserVM* vm, void* ptr);
+# CyValue cyValueAllocOpaquePtr(CyVM* vm, void* ptr);
 cyValueAllocOpaquePtr = lib.cyValueAllocOpaquePtr
 cyValueAllocOpaquePtr.restype = CyValue
-cyValueAllocOpaquePtr.argtypes = [POINTER(CyUserVM), c_void_p]
+cyValueAllocOpaquePtr.argtypes = [POINTER(CyVM), c_void_p]
 
-# CyValue cyValueTagLiteral(CyUserVM* vm, CStr str);
+# CyValue cyValueTagLiteral(CyVM* vm, CStr str);
 cyValueTagLiteral = lib.cyValueTagLiteral
 cyValueTagLiteral.restype = CyValue
-cyValueTagLiteral.argtypes = [POINTER(CyUserVM), CStr]
+cyValueTagLiteral.argtypes = [POINTER(CyVM), CStr]
 
 # CyTypeId cyValueGetTypeId(CyValue val);
 cyValueGetTypeId = lib.cyValueGetTypeId
@@ -237,12 +242,40 @@ cyValueAsTagLiteralId = lib.cyValueAsTagLiteralId
 cyValueAsTagLiteralId.restype = c_uint32
 cyValueAsTagLiteralId.argtypes = [CyValue]
 
-# CStr cyValueToTempString(CyUserVM* vm, CyValue val);
+# CStr cyValueToTempString(CyVM* vm, CyValue val);
 cyValueToTempString = lib.cyValueToTempString
 cyValueToTempString.restype = CStr
-cyValueToTempString.argtypes = [POINTER(CyUserVM), CyValue]
+cyValueToTempString.argtypes = [POINTER(CyVM), CyValue]
 
-# CStr cyValueToTempRawString(CyUserVM* vm, CyValue val);
+# CStr cyValueToTempRawString(CyVM* vm, CyValue val);
 cyValueToTempRawString = lib.cyValueToTempRawString
 cyValueToTempRawString.restype = CStr
-cyValueToTempRawString.argtypes = [POINTER(CyUserVM), CyValue]
+cyValueToTempRawString.argtypes = [POINTER(CyVM), CyValue]
+
+# size_t cyListLen(CyValue list);
+cyListLen = lib.cyListLen
+cyListLen.restype = c_size_t
+cyListLen.argtypes = [CyValue]
+
+# size_t cyListCap(CyValue list);
+cyListCap = lib.cyListCap
+cyListCap.restype = c_size_t
+cyListCap.argtypes = [CyValue]
+
+# CyValue cyListGet(CyVM* vm, CyValue list, size_t idx);
+cyListGet = lib.cyListGet
+cyListGet.restype = CyValue
+cyListGet.argtypes = [POINTER(CyVM), CyValue, c_size_t]
+
+# void cyListSet(CyVM* vm, CyValue list, size_t idx, CyValue val);
+cyListSet = lib.cyListSet
+cyListSet.argtypes = [POINTER(CyVM), CyValue, c_size_t, CyValue]
+
+# void cyListAppend(CyVM* vm, CyValue list, CyValue val);
+cyListAppend = lib.cyListAppend
+cyListAppend.argtypes = [POINTER(CyVM), CyValue, CyValue]
+
+# void cyListInsert(CyVM* vm, CyValue list, size_t idx, CyValue val);
+cyListInsert = lib.cyListInsert
+cyListInsert.argtypes = [POINTER(CyVM), CyValue, c_size_t, CyValue]
+
