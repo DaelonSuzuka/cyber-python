@@ -5,11 +5,9 @@ def get_printing_vm():
     cyber = CyberVM()
 
     # have to override print so we can capture its output
-    with cyber.module('core') as module:
-
-        @module.function('print')
-        def _print(string: str):
-            print(string)
+    @cyber.function('core.print')
+    def _print(string: str):
+        print(string)
 
     return cyber
 
