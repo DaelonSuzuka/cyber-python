@@ -161,7 +161,10 @@ class CyberVM:
         cyVmSetModuleVar(self.vm, mod, cstr(name), value)
 
     def function(self, name):
-        module_name, func_name = name.split('.')
+        module_name = 'core'
+        func_name = name
+        if '.' in name:
+            module_name, func_name = name.split('.')
         def _decorator(func):
             wrapper, nargs = generate_callback_wrapper(func)            
 
