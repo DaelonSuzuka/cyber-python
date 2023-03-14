@@ -231,17 +231,18 @@ class CyberVM:
         result = cyVmEval(self.vm, cstr(src), pointer(out))
         self.last_result = CyResultCode(result)
         if self.last_result != CyResultCode.CY_Success:
+            report = cyVmGetLastErrorReport(self.vm).charz
             match self.last_result:
                 case CyResultCode.CY_ErrorToken:
-                    raise CyberTokenError
+                    raise CyberTokenError(report)
                 case CyResultCode.CY_ErrorParse:
-                    raise CyberParseError
+                    raise CyberParseError(report)
                 case CyResultCode.CY_ErrorCompile:
-                    raise CyberCompileError
+                    raise CyberCompileError(report)
                 case CyResultCode.CY_ErrorPanic:
-                    raise CyberPanicError
+                    raise CyberPanicError(report)
                 case CyResultCode.CY_ErrorUnknown:
-                    raise CyberUnknownError
+                    raise CyberUnknownError(report)
             raise CyberUnknownError
         
         self.last_output_type = CyType(cyValueGetTypeId(out).value)
