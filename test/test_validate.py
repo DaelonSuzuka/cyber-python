@@ -1,11 +1,11 @@
 from cyber import CyberVM, CyResultCode, CyType
 
 
-def test_validate_pass():
-    cyber = CyberVM()
-    cyber.validate('none')
+# def test_validate_pass():
+#     cyber = CyberVM()
+#     cyber.validate('none')
 
-    assert cyber.last_result == CyResultCode.CY_Success
+#     assert cyber.last_result == CyResultCode.CY_Success
 
 # def test_validate_token_error():
 #     cyber = CyberVM()

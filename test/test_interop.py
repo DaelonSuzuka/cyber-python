@@ -4,11 +4,9 @@ from cyber import CyberVM, CyResultCode, CyType
 def test_python_function_specified_argtype(capsys):
     cyber = CyberVM()
 
-    with cyber.module('core') as module:
-
-        @module.function('test')
-        def _new_func(one: str, two: int, three: float):
-            print(one, two, three)
+    @cyber.function('core.test')
+    def _new_func(one: str, two: int, three: float):
+        print(one, two, three)
 
     cyber.eval("test 'one' 2 3")
 
@@ -20,11 +18,9 @@ def test_python_function_specified_argtype(capsys):
 def test_python_function_unspecified_argtypes(capsys):
     cyber = CyberVM()
 
-    with cyber.module('core') as module:
-
-        @module.function('test')
-        def _new_func(one, two, three):
-            print(one, two, three)
+    @cyber.function('core.test')
+    def _new_func(one, two, three):
+        print(one, two, three)
 
     cyber.eval("test 'one' 2 3")
 
@@ -36,11 +32,9 @@ def test_python_function_unspecified_argtypes(capsys):
 def test_python_function_return_type():
     cyber = CyberVM()
 
-    with cyber.module('core') as module:
-
-        @module.function('test')
-        def _test_func() -> str:
-            return 'test'
+    @cyber.function('core.test')
+    def _test_func() -> str:
+        return 'test'
 
     output = cyber.eval('test()')
 

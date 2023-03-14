@@ -16,10 +16,9 @@ from cyber import CyberVM, CyResultCode, CyType
 def test_context_override_function(capsys):
     cyber = CyberVM()
 
-    with cyber.module('core') as module:
-        @module.function('print')
-        def _print(string: str):
-            print('<python>', string)
+    @cyber.function('print')
+    def _print(string: str):
+        print('<python>', string)
 
     cyber.eval("print 'hello'")
 
@@ -31,10 +30,9 @@ def test_context_override_function(capsys):
 def test_context_add_function(capsys):
     cyber = CyberVM()
 
-    with cyber.module('core') as module:
-        @module.function('new_func')
-        def _new_func(string: str):
-            print(string)
+    @cyber.function('new_func')
+    def _new_func(string: str):
+        print(string)
 
     cyber.eval("new_func 'hello'")
 
@@ -46,10 +44,9 @@ def test_context_add_function(capsys):
 def test_context_add_function_two_args(capsys):
     cyber = CyberVM()
 
-    with cyber.module('core') as module:
-        @module.function('new_func')
-        def _new_func(one: str, two: str):
-            print(one, two)
+    @cyber.function('new_func')
+    def _new_func(one: str, two: str):
+        print(one, two)
 
     cyber.eval("new_func 'one' 'two'")
 
@@ -61,11 +58,9 @@ def test_context_add_function_two_args(capsys):
 def test_context_add_module(capsys):
     cyber = CyberVM()
 
-    with cyber.module('new_module') as module:
-        @module.function('new_func')
-        def _new_func(one: float, two: float):
-            print(one, two)
-
+    @cyber.function('new_module.new_func')
+    def _new_func(one: float, two: float):
+        print(one, two)
 
     script = """
     import mod 'new_module'
