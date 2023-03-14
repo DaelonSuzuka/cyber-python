@@ -69,6 +69,7 @@ w += 'from ctypes import *'
 w += 'from pathlib import Path'
 w += 'import sys'
 w += 'from enum import Enum'
+w += 'import platform'
 w += ''
 
 w += """
