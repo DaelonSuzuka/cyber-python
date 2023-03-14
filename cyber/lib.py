@@ -4,6 +4,7 @@ from ctypes import *
 from pathlib import Path
 import sys
 from enum import Enum
+import platform
 
 
 base_path = Path(__file__).parent / 'lib'
