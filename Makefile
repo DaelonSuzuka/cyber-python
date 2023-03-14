@@ -26,9 +26,13 @@ run: venv
 ZIG := zig build lib
 ZIGFLAGS := -Doptimize=ReleaseFast -Dcpu=baseline
 
+
 # generate cyber/lib.py from src/cyber/cyber.h
 bindings: venv
 	$(VENV_PYTHON) tools/generate_bindings.py
+
+pull_libs: venv
+	$(VENV_PYTHON) tools/download_libs.py
 
 # build cyber for the current platform in debug mode
 build_lib:
