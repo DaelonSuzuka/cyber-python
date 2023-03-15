@@ -132,7 +132,7 @@ class ContextModule:
         def load_module(vm, mod):
             # print(f'[ContextModule]: loading module: {self.name}')
             for name, nargs, wrapper in self.functions:
-                # print(f'[ContextModule]: registering function: {name} {func}')
+                # print(f'[ContextModule]: registering function: {name}')
                 self.cyber.set_module_func(mod, name, nargs, wrapper)
             return True
 
@@ -161,39 +161,69 @@ class CyberVM:
         cyVmSetModuleVar(self.vm, mod, cstr(name), value)
 
     def function(self, name):
-        module_name = 'core'
-        func_name = name
-        if '.' in name:
-            module_name, func_name = name.split('.')
-        def _decorator(func):
+        if isinstance(name, str):
+            module_name = 'core'
+            func_name = name
+            if '.' in name:
+                module_name, func_name = name.split('.')
+            def _decorator(func):
+                wrapper, nargs = generate_callback_wrapper(func)            
+
+                if module_name not in self.pending_modules:
+                    self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
+                self.pending_modules[module_name]['funcs'].append((func_name, nargs, wrapper))
+                return func
+            return _decorator
+        else:
+            # we ARE the decorator
+            func = name
+            
+            module_name = 'core'
+            func_name = func.__name__
+
             wrapper, nargs = generate_callback_wrapper(func)            
 
             if module_name not in self.pending_modules:
                 self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
             self.pending_modules[module_name]['funcs'].append((func_name, nargs, wrapper))
+
             return func
-        return _decorator
 
     def module(self, name):
-        class ModuleClass:
-            _name = name
-        self.pending_module_classes.append(ModuleClass)
-        return ModuleClass
+        if isinstance(name, str):
+            class ModuleClass:
+                _name = name
 
-    def _get_module(self, name):
-        mod = ContextModule(self, name)
-        self.modules.append(mod)
-        return mod
+                def __new__(cls, kls):
+                    """should only be called as a class decorator"""
+                    kls._name = cls._name
+                    self.pending_module_classes.append(kls)
+                    return cls, kls
+                    
+            self.pending_module_classes.append(ModuleClass)
+            return ModuleClass
+        else:
+            # we ARE the decorator
+            kls = name
+            kls._name = kls.__name__
+            
+            self.pending_module_classes.append(kls)
+            return kls
 
     def build_pending_modules(self):
-        for cls in self.pending_module_classes:
-            for sub in cls.__subclasses__():
-                for func in [ m for m in dir(sub) if callable(getattr(sub, m)) and not m.startswith('__')]:
-                    dec = self.function(f'{sub._name}.{func}')
-                    dec(getattr(sub, func))
-                
+        def get_funcs(klass):
+            for func in [m for m in dir(klass) if callable(getattr(klass, m)) and not m.startswith('__')]:
+                dec = self.function(f'{klass._name}.{func}')
+                dec(getattr(klass, func))
+
+        for klass in self.pending_module_classes:
+            get_funcs(klass)
+            for sub in klass.__subclasses__():
+                get_funcs(sub)
+
         for module_name, contents in self.pending_modules.items():
-            mod = self._get_module(module_name)
+            mod = ContextModule(self, module_name)
+            self.modules.append(mod)
             mod.functions = contents['funcs']
             mod.build()
 
