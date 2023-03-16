@@ -86,6 +86,26 @@ CyFunc = CFUNCTYPE(CyValue, POINTER(CyVM), POINTER(CyValue), c_uint8)
 # typedef bool (*CyLoadModuleFunc)(CyVM* vm, CyModule* mod);
 CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyVM), POINTER(CyModule))
 
+# CStr cyGetFullVersion();
+cyGetFullVersion = lib.cyGetFullVersion
+cyGetFullVersion.restype = CStr
+cyGetFullVersion.argtypes = []
+
+# CStr cyGetVersion();
+cyGetVersion = lib.cyGetVersion
+cyGetVersion.restype = CStr
+cyGetVersion.argtypes = []
+
+# CStr cyGetBuild();
+cyGetBuild = lib.cyGetBuild
+cyGetBuild.restype = CStr
+cyGetBuild.argtypes = []
+
+# CStr cyGetCommit();
+cyGetCommit = lib.cyGetCommit
+cyGetCommit.restype = CStr
+cyGetCommit.argtypes = []
+
 # CyVM* cyVmCreate();
 cyVmCreate = lib.cyVmCreate
 cyVmCreate.restype = POINTER(CyVM)
