@@ -59,6 +59,7 @@ reload: venv
 # build the package
 build: venv
 	$(VENV_PYTHON) -m build
+	$(VENV_PYTHON) tools/make_wheels.py
 
 # upload the built package to pypi using twine
 publish: venv
