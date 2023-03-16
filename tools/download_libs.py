@@ -2,7 +2,7 @@ from pathlib import Path
 from urllib.request import urlopen
 
 
-BASE_URL = 'https://github.com/DaelonSuzuka/cyber/releases/download/latest/'
+BASE_URL = 'https://github.com/fubark/cyber/releases/download/latest/'
 
 
 lib_urls = [
