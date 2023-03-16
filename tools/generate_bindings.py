@@ -72,6 +72,7 @@ w += 'from enum import Enum'
 w += 'import platform'
 w += ''
 
+# TODO: add linux-arm64 support
 w += """
 base_path = Path(__file__).parent / 'lib'
 

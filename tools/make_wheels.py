@@ -7,6 +7,7 @@ PLATFORMS = {
     'macosx_10_9_x86_64': 'cyber/lib/libcyber-arm64.dylib',
     'macosx_11_0_arm64': 'cyber/lib/libcyber.dylib',
     'manylinux_2_12_x86_64.manylinux2010_x86_64.musllinux_1_1_x86_64': 'cyber/lib/libcyber.so',
+    # 'manylinux_2_12_arm64.manylinux2010_arm64.musllinux_1_1_arm64': 'cyber/lib/libcyber-arm64.so',
 }
 
 uni_wheels = Path('dist').glob('*py3-none-any.whl')
