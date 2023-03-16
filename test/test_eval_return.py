@@ -1,4 +1,4 @@
-from cyber import CyberVM, CyResultCode, CyType
+from cyber import CyberVM, CyResultCode, CyType, CyValue
 
 
 def test_eval_none():
@@ -46,6 +46,22 @@ def test_eval_number():
     assert output == 1.5
     assert cyber.last_result == CyResultCode.CY_Success
     assert cyber.last_output_type == CyType.CY_TypeNumber
+
+
+def test_eval_cyvalue():
+    cyber = CyberVM()
+
+    script = """
+        func foo(a):
+            pass
+            
+        foo
+    """
+    output = cyber.eval(script)
+
+    assert cyber.last_result == CyResultCode.CY_Success
+    assert cyber.last_output_type == CyType.CY_TypeLambda
+    assert type(output) == CyValue
 
 
 def test_eval_static_a_string():

@@ -27,6 +27,20 @@ def cstr(s) -> CStr:
     return CStr(c_char_p(s), len(s))
 
 
+def py_to_cyvalue(vm, value) -> CyValue:
+    match type(value):
+        case builtins.bool:
+            return cyValueTrue() if value else cyValueFalse()
+        case builtins.int:
+            return cyValueInteger(value)
+        case builtins.float:
+            return cyValueNumber(value)
+        case builtins.str:
+            return cyValueGetOrAllocStringInfer(vm, cstr(value))
+        case _:
+            return cyValueNone()
+
+
 def cyvalue_to_py(vm, cyvalue):
     match CyType(cyValueGetTypeId(cyvalue).value):
         case CyType.CY_TypeNone:
@@ -51,6 +65,8 @@ def cyvalue_to_py(vm, cyvalue):
             return cyValueToTempRawString(vm, cyvalue).charz
         case CyType.CY_TypeRawStringSlice:
             return cyValueToTempRawString(vm, cyvalue).charz
+        case _:
+            return cyvalue
 
 
 def generate_callback_wrapper(func):
@@ -104,36 +120,25 @@ def generate_callback_wrapper(func):
     return wrapper, nargs
 
 
-# TODO rename this something else, because the context manager syntax is gone
-class ContextModule:
-    def __init__(self, cyber, name) -> None:
+class Module:
+    def __init__(self, cyber, name, contents) -> None:
         self.cyber = cyber
         self.name = name
-        self.functions = []
-        self.variables = []
-
-    def function(self, name):
-        def _decorator(func):
-            # print(f'[ContextModule]: registering function: {name} {func}')
-            wrapper, nargs = generate_callback_wrapper(func)
-            self.functions.append((name, wrapper, nargs))
-            return func
-
-        return _decorator
-
-    # def variable(self, name, nargs=0):
-    #     def _decorator(func):
-    #         self.variables.append((name, CyFunc(func), nargs))
-
-    #     return _decorator
+        self.functions = contents['funcs']
+        self.variables = contents['vars']
+        self.build()
 
     def build(self):
         @CyLoadModuleFunc
         def load_module(vm, mod):
             # print(f'[ContextModule]: loading module: {self.name}')
-            for name, nargs, wrapper in self.functions:
+            for func_info in self.functions:
                 # print(f'[ContextModule]: registering function: {name}')
-                self.cyber.set_module_func(mod, name, nargs, wrapper)
+                self.cyber.set_module_func(mod, *func_info)
+
+            for var_info in self.variables:
+                self.cyber.set_module_var(mod, *var_info)
+
             return True
 
         self.load_module = load_module
@@ -158,8 +163,12 @@ class CyberVM:
         cyVmSetModuleFunc(self.vm, mod, cstr(name), nargs, func)
 
     def set_module_var(self, mod, name, value):
-        cyVmSetModuleVar(self.vm, mod, cstr(name), value)
+        cyVmSetModuleVar(self.vm, mod, cstr(name), py_to_cyvalue(self.vm, value))
 
+    def _ensure_module(self, module_name):
+        if module_name not in self.pending_modules:
+            self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
+    
     def function(self, name):
         if isinstance(name, str):
             module_name = 'core'
@@ -168,26 +177,30 @@ class CyberVM:
                 module_name, func_name = name.split('.')
             def _decorator(func):
                 wrapper, nargs = generate_callback_wrapper(func)            
-
-                if module_name not in self.pending_modules:
-                    self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
+                self._ensure_module(module_name)
                 self.pending_modules[module_name]['funcs'].append((func_name, nargs, wrapper))
                 return func
             return _decorator
         else:
             # we ARE the decorator
             func = name
-            
             module_name = 'core'
             func_name = func.__name__
-
             wrapper, nargs = generate_callback_wrapper(func)            
 
-            if module_name not in self.pending_modules:
-                self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
+            self._ensure_module(module_name)
             self.pending_modules[module_name]['funcs'].append((func_name, nargs, wrapper))
 
             return func
+        
+    def variable(self, name, value):
+        module_name = 'core'
+        var_name = name
+        if '.' in name:
+            module_name, var_name = name.split('.')
+
+        self._ensure_module(module_name)
+        self.pending_modules[module_name]['vars'].append((var_name, value))
 
     def module(self, name):
         if isinstance(name, str):
@@ -216,16 +229,20 @@ class CyberVM:
                 dec = self.function(f'{klass._name}.{func}')
                 dec(getattr(klass, func))
 
+        def get_vars(klass):
+            for var in [m for m in dir(klass) if not callable(getattr(klass, m)) and not m.startswith('__')]:
+                self.variable(f'{klass._name}.{var}', getattr(klass, var))
+
         for klass in self.pending_module_classes:
             get_funcs(klass)
+            get_vars(klass)
             for sub in klass.__subclasses__():
                 get_funcs(sub)
+                get_vars(sub)
 
         for module_name, contents in self.pending_modules.items():
-            mod = ContextModule(self, module_name)
+            mod = Module(self, module_name, contents)
             self.modules.append(mod)
-            mod.functions = contents['funcs']
-            mod.build()
 
         self.pending_modules.clear()
         self.pending_module_classes.clear()
