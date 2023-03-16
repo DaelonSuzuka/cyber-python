@@ -1,0 +1,18 @@
+[run]
+branch = True
+omit = test/*, cyber/__init__.py
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    pragma: no cover
+
+    # ignore platform selection code in lib.py
+    if sys.platform
+
+    # ignore unknown error that I can't throw
+    CY_ErrorUnknown
+    CyberUnknownError
+
+ignore_errors = True

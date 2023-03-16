@@ -74,7 +74,7 @@ tests: venv
 	$(VENV_PYTHON) -m pytest
 
 coverage: venv
-	$(VENV_PYTHON) -m pytest --cov
+	$(VENV_PYTHON) -m pytest --cov --cov-branch --cov-report term-missing --cov-config=.coveragerc
 
 # remove build artifacts
 clean:
