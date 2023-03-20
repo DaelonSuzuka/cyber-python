@@ -34,7 +34,7 @@ class Writer:
         self.level -= 1
 
 
-with open('src/cyber/src/cyber.h') as f:
+with open('cyber/lib/cyber.h') as f:
     raw = f.read()
 
 output = ''
@@ -65,7 +65,23 @@ w = Writer()
 
 w += '# GENERATED FILE DO NOT EDIT #'
 w += ''
-w += 'from ctypes import *'
+w += 'from ctypes import ('
+with w:
+    w += 'WinDLL,'
+    w += 'CDLL,'
+    w += 'Structure,'
+    w += 'CFUNCTYPE,'
+    w += 'POINTER,'
+    w += 'c_void_p,'
+    w += 'c_char_p,'
+    w += 'c_bool,'
+    w += 'c_size_t,'
+    w += 'c_int,'
+    w += 'c_double,'
+    w += 'c_uint64,'
+    w += 'c_uint32,'
+    w += 'c_uint8,'
+w += ')'
 w += 'from pathlib import Path'
 w += 'import sys'
 w += 'from enum import Enum'
@@ -186,14 +202,14 @@ for d in definitions:
     if d.startswith('//'):
         continue
     if 'typedef' in d:
-        if '(*' in d:
+        if 'enum' in d:
+            typedef_enum(w, d)
+        elif '(*' in d:
             typedef_funcptr_def(w, d)
         elif 'int' in d:
             typedef_int(w, d)
         elif 'struct' in d:
             typedef_struct(w, d)
-        elif 'enum' in d:
-            typedef_enum(w, d)
     else:
         if '=' in d:
             continue

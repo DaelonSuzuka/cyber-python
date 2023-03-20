@@ -26,8 +26,12 @@ run: venv
 ZIG := zig build lib
 ZIGFLAGS := -Doptimize=ReleaseFast -Dcpu=baseline
 
+# download the latest Cyber libs and cyber.h from github
+# then rebuild cyber/lib.py from cyber.h
+libs: venv
+	$(VENV_PYTHON) tools/download_libs.py
+	$(VENV_PYTHON) tools/generate_bindings.py
 
-# generate cyber/lib.py from src/cyber/cyber.h
 bindings: venv
 	$(VENV_PYTHON) tools/generate_bindings.py
 
