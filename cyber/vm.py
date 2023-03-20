@@ -1,6 +1,16 @@
-from ctypes import *
+from ctypes import (
+    c_char_p,
+    pointer,
+)
 import inspect
-from .lib import *
+from .lib import (
+    CStr,
+    CyFunc,
+    CyValue,
+    CyType,
+    CyResultCode,
+    CyLoadModuleFunc,
+)
 from . import lib
 from textwrap import dedent
 import builtins
@@ -30,41 +40,41 @@ def cstr(s) -> CStr:
 def py_to_cyvalue(vm, value) -> CyValue:
     match type(value):
         case builtins.bool:
-            return cyValueTrue() if value else cyValueFalse()
+            return lib.cyValueTrue() if value else lib.cyValueFalse()
         case builtins.int:
-            return cyValueInteger(value)
+            return lib.cyValueInteger(value)
         case builtins.float:
-            return cyValueNumber(value)
+            return lib.cyValueNumber(value)
         case builtins.str:
-            return cyValueGetOrAllocStringInfer(vm, cstr(value))
+            return lib.cyValueGetOrAllocStringInfer(vm, cstr(value))
         case _:
-            return cyValueNone()
+            return lib.cyValueNone()
 
 
 def cyvalue_to_py(vm, cyvalue):
-    match CyType(cyValueGetTypeId(cyvalue).value):
+    match CyType(lib.cyValueGetTypeId(cyvalue).value):
         case CyType.CY_TypeNone:
             return None
         case CyType.CY_TypeBoolean:
-            return cyValueAsBool(cyvalue)
+            return lib.cyValueAsBool(cyvalue)
         case CyType.CY_TypeInteger:
-            return cyValueAsInteger(cyvalue)
+            return lib.cyValueAsInteger(cyvalue)
         case CyType.CY_TypeNumber:
-            return cyValueAsNumber(cyvalue)
+            return lib.cyValueAsNumber(cyvalue)
         case CyType.CY_TypeStaticAstring:
-            return cyValueToTempString(vm, cyvalue).charz.decode()
+            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
         case CyType.CY_TypeStaticUstring:
-            return cyValueToTempString(vm, cyvalue).charz.decode()
+            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
         case CyType.CY_TypeAstring:
-            return cyValueToTempString(vm, cyvalue).charz.decode()
+            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
         case CyType.CY_TypeUstring:
-            return cyValueToTempString(vm, cyvalue).charz.decode()
+            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
         case CyType.CY_TypeStringSlice:
-            return cyValueToTempString(vm, cyvalue).charz.decode()
+            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
         case CyType.CY_TypeRawString:
-            return cyValueToTempRawString(vm, cyvalue).charz
+            return lib.cyValueToTempRawString(vm, cyvalue).charz
         case CyType.CY_TypeRawStringSlice:
-            return cyValueToTempRawString(vm, cyvalue).charz
+            return lib.cyValueToTempRawString(vm, cyvalue).charz
         case _:
             return cyvalue
 
@@ -90,14 +100,14 @@ def generate_callback_wrapper(func):
                 continue
             match param.annotation:
                 case builtins.str:
-                    _args.append(cyValueToTempString(vm, args[i]).charz.decode())
+                    _args.append(lib.cyValueToTempString(vm, args[i]).charz.decode())
                 case builtins.int:
-                    _args.append(int(cyValueAsNumber(args[i])))
+                    _args.append(int(lib.cyValueAsNumber(args[i])))
                 case builtins.float:
-                    _args.append(cyValueAsNumber(args[i]))
+                    _args.append(lib.cyValueAsNumber(args[i]))
                 case builtins.bool:
-                    _args.append(cyValueToBool(args[i]))
-                case lib.CyValue: # raw cyValue
+                    _args.append(lib.cyValueToBool(args[i]))
+                case lib.CyValue: # raw lib.cyValue
                     _args.append(args[i])
                 case _: # no type specified, try to auto-convert
                     _args.append(cyvalue_to_py(vm, args[i]))
@@ -111,9 +121,9 @@ def generate_callback_wrapper(func):
         # convert return type
         # match return_type:
             # case None:
-            #     ret = cyValueNone()
+            #     ret = lib.cyValueNone()
             # case builtins.str:
-            #     ret = cyValueGetOrAllocStringInfer(vm, cstr(raw_ret))
+            #     ret = lib.cyValueGetOrAllocStringInfer(vm, cstr(raw_ret))
 
         return ret
 
@@ -151,19 +161,19 @@ class CyberVM:
         self.last_output_type = None
         self.last_output = None
 
-        self.vm = cyVmCreate()
+        self.vm = lib.cyVmCreate()
         self.modules = []
         self.pending_modules = {}
         self.pending_module_classes = []
 
     def add_module_loader(self, name, loader):
-        cyVmAddModuleLoader(self.vm, cstr(name), loader)
+        lib.cyVmAddModuleLoader(self.vm, cstr(name), loader)
 
     def set_module_func(self, mod, name, nargs, func):
-        cyVmSetModuleFunc(self.vm, mod, cstr(name), nargs, func)
+        lib.cyVmSetModuleFunc(self.vm, mod, cstr(name), nargs, func)
 
     def set_module_var(self, mod, name, value):
-        cyVmSetModuleVar(self.vm, mod, cstr(name), py_to_cyvalue(self.vm, value))
+        lib.cyVmSetModuleVar(self.vm, mod, cstr(name), py_to_cyvalue(self.vm, value))
 
     def _ensure_module(self, module_name):
         if module_name not in self.pending_modules:
@@ -252,9 +262,9 @@ class CyberVM:
 
         self.last_output_type = None
         self.last_output = None
-        result = cyVmValidate(self.vm, cstr(src))
+        result = lib.cyVmValidate(self.vm, cstr(src))
         self.last_result = CyResultCode(result)
-        return cyVmGetLastErrorReport(self.vm).charz
+        return lib.cyVmGetLastErrorReport(self.vm).charz
         # if self.last_result != CyResultCode.CY_Success:
         #     match self.last_result:
         #         case CyResultCode.CY_ErrorToken:
@@ -275,10 +285,10 @@ class CyberVM:
         self.last_output_type = None
         self.last_output = None
         out = CyValue()
-        result = cyVmEval(self.vm, cstr(src), pointer(out))
+        result = lib.cyVmEval(self.vm, cstr(src), pointer(out))
         self.last_result = CyResultCode(result)
         if self.last_result != CyResultCode.CY_Success:
-            report = cyVmGetLastErrorReport(self.vm).charz
+            report = lib.cyVmGetLastErrorReport(self.vm).charz
             match self.last_result:
                 case CyResultCode.CY_ErrorToken:
                     raise CyberTokenError(report)
@@ -292,7 +302,7 @@ class CyberVM:
                     raise CyberUnknownError(report)
             raise CyberUnknownError
         
-        self.last_output_type = CyType(cyValueGetTypeId(out).value)
+        self.last_output_type = CyType(lib.cyValueGetTypeId(out).value)
         self.last_output = cyvalue_to_py(self.vm, out)
         return self.last_output
 

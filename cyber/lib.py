@@ -1,6 +1,21 @@
 # GENERATED FILE DO NOT EDIT #
 
-from ctypes import *
+from ctypes import (
+    WinDLL,
+    CDLL,
+    Structure,
+    CFUNCTYPE,
+    POINTER,
+    c_void_p,
+    c_char_p,
+    c_bool,
+    c_size_t,
+    c_int,
+    c_double,
+    c_uint64,
+    c_uint32,
+    c_uint8,
+)
 from pathlib import Path
 import sys
 from enum import Enum
@@ -68,7 +83,7 @@ class CyType(Enum):
     CY_TypeBox = 21
     CY_TypeNativeFunc1 = 22
     CY_TypeTccState = 23
-    CY_TypeOpaquePtr = 24
+    CY_TypePointer = 24
     CY_TypeFile = 25
     CY_TypeDir = 26
     CY_TypeDirIter = 27
@@ -223,10 +238,10 @@ cyValueAllocNativeFunc = lib.cyValueAllocNativeFunc
 cyValueAllocNativeFunc.restype = CyValue
 cyValueAllocNativeFunc.argtypes = [POINTER(CyVM), CyFunc, c_uint32]
 
-# CyValue cyValueAllocOpaquePtr(CyVM* vm, void* ptr);
-cyValueAllocOpaquePtr = lib.cyValueAllocOpaquePtr
-cyValueAllocOpaquePtr.restype = CyValue
-cyValueAllocOpaquePtr.argtypes = [POINTER(CyVM), c_void_p]
+# CyValue cyValueAllocPointer(CyVM* vm, void* ptr);
+cyValueAllocPointer = lib.cyValueAllocPointer
+cyValueAllocPointer.restype = CyValue
+cyValueAllocPointer.argtypes = [POINTER(CyVM), c_void_p]
 
 # CyValue cyValueTagLiteral(CyVM* vm, CStr str);
 cyValueTagLiteral = lib.cyValueTagLiteral
