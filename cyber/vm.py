@@ -75,6 +75,10 @@ def cyvalue_to_py(vm, cyvalue):
             return lib.cyValueToTempRawString(vm, cyvalue).charz
         case CyType.CY_TypeRawStringSlice:
             return lib.cyValueToTempRawString(vm, cyvalue).charz
+        case CyType.CY_TypeList:
+            length = lib.cyListLen(cyvalue)
+            cylist = [lib.cyListGet(vm, cyvalue, i) for i in range(length)]
+            return [cyvalue_to_py(vm, cyval) for cyval in cylist]
         case _:
             return cyvalue
 
