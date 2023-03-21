@@ -85,12 +85,7 @@ def cyvalue_to_py(vm, cyvalue):
 
 def generate_callback_wrapper(func):
     sig = inspect.signature(func)
-    nargs = len(sig.parameters)
     return_type = sig.return_annotation
-
-    # TODO: probably not a robust way to do this
-    if 'self' in sig.parameters:
-        nargs = nargs - 1
 
     @CyFunc
     def wrapper(vm, args, nargs):
@@ -116,6 +111,10 @@ def generate_callback_wrapper(func):
                 case _: # no type specified, try to auto-convert
                     _args.append(cyvalue_to_py(vm, args[i]))
             i += 1
+            # quit when all args have been consumed
+            # allows default parameters in wrapped functions
+            if i == nargs:
+                break
 
         raw_ret = func(*_args)
 
@@ -131,7 +130,7 @@ def generate_callback_wrapper(func):
 
         return ret
 
-    return wrapper, nargs
+    return wrapper
 
 
 class Module:
@@ -183,28 +182,43 @@ class CyberVM:
         if module_name not in self.pending_modules:
             self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
     
+    def generate_wrappers(self, module_name, func_name, func):
+        sig = inspect.signature(func)
+        nargs = len(sig.parameters)
+        # TODO: probably not a robust way to do this
+        if 'self' in sig.parameters:
+            nargs = nargs - 1
+        sigs = [nargs]
+
+        optionals = 0
+        for name, param in sig.parameters.items():
+            if param.default != inspect._empty:
+                optionals += 1
+                sigs.append(nargs - optionals)
+
+        wrapper = generate_callback_wrapper(func)
+
+        for n in sigs:
+            self.pending_modules[module_name]['funcs'].append((func_name, n, wrapper))
+
     def function(self, name):
         if isinstance(name, str):
             module_name = 'core'
             func_name = name
             if '.' in name:
                 module_name, func_name = name.split('.')
+            self._ensure_module(module_name)
             def _decorator(func):
-                wrapper, nargs = generate_callback_wrapper(func)            
-                self._ensure_module(module_name)
-                self.pending_modules[module_name]['funcs'].append((func_name, nargs, wrapper))
+                self.generate_wrappers(module_name, func_name, func)
                 return func
             return _decorator
         else:
             # we ARE the decorator
             func = name
             module_name = 'core'
-            func_name = func.__name__
-            wrapper, nargs = generate_callback_wrapper(func)            
-
             self._ensure_module(module_name)
-            self.pending_modules[module_name]['funcs'].append((func_name, nargs, wrapper))
-
+            func_name = func.__name__
+            self.generate_wrappers(module_name, func_name, func)
             return func
         
     def variable(self, name, value):
