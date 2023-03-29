@@ -67,8 +67,6 @@ w += '# GENERATED FILE DO NOT EDIT #'
 w += ''
 w += 'from ctypes import ('
 with w:
-    w += 'WinDLL,'
-    w += 'CDLL,'
     w += 'Structure,'
     w += 'CFUNCTYPE,'
     w += 'POINTER,'
@@ -93,16 +91,20 @@ w += """
 base_path = Path(__file__).parent / 'lib'
 
 if sys.platform == 'win32':
+    from ctypes import WinDLL
     path = base_path / 'cyber.dll'
     lib = WinDLL(path.as_posix())
 elif sys.platform == 'linux':
+    from ctypes import CDLL
     path = base_path / 'libcyber.so'
     lib = CDLL(path.as_posix())
 elif sys.platform == 'darwin':
     if platform.machine() == 'arm64':
+        from ctypes import CDLL
         path = base_path / 'libcyber-arm64.dylib'
         lib = CDLL(path.as_posix())
     else:
+        from ctypes import CDLL
         path = base_path / 'libcyber.dylib'
         lib = CDLL(path.as_posix())
 """
