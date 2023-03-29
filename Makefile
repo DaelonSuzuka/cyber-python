@@ -101,7 +101,7 @@ ifeq ($(OS),Windows_NT)
 	PYTHON := python
 	VENV_PYTHON := $(VENV)/$(PYTHON)
 	VENV_PYINSTALLER := $(VENV)/pyinstaller
-	RM := rm
+	RM := rm -rf
 else
 	VENV_DIR := $(VENV_NAME)
 	VENV_CANARY_DIR := $(VENV_DIR)/canary
