@@ -64,8 +64,8 @@ class CyType(Enum):
     CY_TypeError = 2
     CY_TypeStaticAstring = 3
     CY_TypeStaticUstring = 4
-    CY_TypeUserTag = 5
-    CY_TypeUserTagLiteral = 6
+    CY_TypeEnum = 5
+    CY_TypeSymbol = 6
     CY_TypeInteger = 7
     CY_TypeNumber = 8
     CY_TypeList = 9
@@ -87,7 +87,7 @@ class CyType(Enum):
     CY_TypeFile = 25
     CY_TypeDir = 26
     CY_TypeDirIter = 27
-    CY_TypeSymbol = 28
+    CY_TypeType = 28
 
 class CStr(Structure):
     _fields_ = [('charz', c_char_p), ('len', c_size_t)]
