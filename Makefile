@@ -90,30 +90,23 @@ clean:
 # python venv settings
 VENV_NAME := .venv
 REQUIREMENTS := requirements.txt
+VENV_DIR := $(VENV_NAME)
+VENV_CANARY_DIR := $(VENV_DIR)/canary
+VENV_CANARY_FILE := $(VENV_CANARY_DIR)/$(REQUIREMENTS)
+VENV_TMP_DIR := $(VENV_DIR)/tmp
+VENV_TMP_FREEZE := $(VENV_TMP_DIR)/freeze.txt
 
 ifeq ($(OS),Windows_NT)
-	VENV_DIR := $(VENV_NAME)
-	VENV_CANARY_DIR := $(VENV_DIR)/canary
-	VENV_CANARY_FILE := $(VENV_CANARY_DIR)/$(REQUIREMENTS)
-	VENV_TMP_DIR := $(VENV_DIR)/tmp
-	VENV_TMP_FREEZE := $(VENV_TMP_DIR)/freeze.txt
 	VENV := $(VENV_DIR)/Scripts
 	PYTHON := python
-	VENV_PYTHON := $(VENV)/$(PYTHON)
-	VENV_PYINSTALLER := $(VENV)/pyinstaller
-	RM := rm -rf
 else
-	VENV_DIR := $(VENV_NAME)
-	VENV_CANARY_DIR := $(VENV_DIR)/canary
-	VENV_CANARY_FILE := $(VENV_CANARY_DIR)/$(REQUIREMENTS)
-	VENV_TMP_DIR := $(VENV_DIR)/tmp
-	VENV_TMP_FREEZE := $(VENV_TMP_DIR)/freeze.txt
 	VENV := $(VENV_DIR)/bin
 	PYTHON := python3
-	VENV_PYTHON := $(VENV)/$(PYTHON)
-	VENV_PYINSTALLER := $(VENV)/pyinstaller
-	RM := rm -rf 
 endif
+
+VENV_PYTHON := $(VENV)/$(PYTHON)
+VENV_PYINSTALLER := $(VENV)/pyinstaller
+RM := rm -rf 
 
 # Add this as a requirement to any make target that relies on the venv
 .PHONY: venv
