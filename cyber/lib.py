@@ -89,7 +89,7 @@ class CyType(Enum):
     CY_TypeFile = 25
     CY_TypeDir = 26
     CY_TypeDirIter = 27
-    CY_TypeType = 28
+    CY_TypeMetaType = 28
 
 class CStr(Structure):
     _fields_ = [('charz', c_char_p), ('len', c_size_t)]
