@@ -68,6 +68,7 @@ w += ''
 w += 'from ctypes import ('
 with w:
     w += 'Structure,'
+    w += 'Union,'
     w += 'CFUNCTYPE,'
     w += 'POINTER,'
     w += 'c_void_p,'
@@ -128,6 +129,7 @@ types = {
 
 
 def typedef_int(w, d):
+    print(d)
     m = re.match(r'typedef (\w+) (\w*)', d)
     t = m[1]
     types[f'{m[2]}*'] = f'POINTER({m[2]})'
@@ -137,25 +139,36 @@ def typedef_int(w, d):
 
 
 def typedef_struct(w, d):
-    m = re.match(r'typedef struct (\w+) ({.*})?', d.replace('\n', ''))
-    struct_name = m[1]
+    m = re.match(r'typedef (struct|union) (\w+) ({.*})?', d.replace('\n', ''))
+    def_type = m[1]
+    struct_name = m[2]
+    body = m[3]
     types[f'{struct_name}*'] = f'POINTER({struct_name})'
     fields = []
-    if m[2]:
-        for f in m[2][1:-1].split(';'):
+    if body:
+        for f in body[1:-1].split(';'):
             if f:
                 parts = f.strip().split(' ')
                 name = parts[-1]
                 c_type = ' '.join(parts[:-1])
                 py_type = types.get(c_type, c_type)
                 fields.append(f"('{name}', {py_type})")
-
-    w += f'class {struct_name}(Structure):'
-    with w:
-        if fields:
-            w += f"_fields_ = [{', '.join(fields)}]"
-        else:
+    
+    if def_type == 'union':
+        # TODO: actually support unions
+        # TODO: probably requires supporting arbitrarily nested struct/union defs
+        w += f'class {struct_name}(Union):'
+        with w:
+            w += '# unions not supported yet'
             w += '...'
+
+    if def_type == 'struct':
+        w += f'class {struct_name}(Structure):'
+        with w:
+            if fields:
+                w += f"_fields_ = [{', '.join(fields)}]"
+            else:
+                w += '...'
 
 
 def typedef_enum(w, d):
@@ -208,7 +221,7 @@ for d in definitions:
             typedef_enum(w, d)
         elif '(*' in d:
             typedef_funcptr_def(w, d)
-        elif 'int' in d:
+        elif 'int' in d.split(' ')[1]:
             typedef_int(w, d)
         elif 'struct' in d:
             typedef_struct(w, d)
