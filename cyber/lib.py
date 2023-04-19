@@ -2,6 +2,7 @@
 
 from ctypes import (
     Structure,
+    Union,
     CFUNCTYPE,
     POINTER,
     c_void_p,
@@ -102,6 +103,10 @@ CyFunc = CFUNCTYPE(CyValue, POINTER(CyVM), POINTER(CyValue), c_uint8)
 
 # typedef bool (*CyLoadModuleFunc)(CyVM* vm, CyModule* mod);
 CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyVM), POINTER(CyModule))
+
+class CyHeapObject(Union):
+    # unions not supported yet
+    ...
 
 # CStr cyGetFullVersion();
 cyGetFullVersion = lib.cyGetFullVersion
@@ -250,10 +255,20 @@ cyValueTagLiteral = lib.cyValueTagLiteral
 cyValueTagLiteral.restype = CyValue
 cyValueTagLiteral.argtypes = [POINTER(CyVM), CStr]
 
+# CyValue cyValueHeapObject(CyHeapObject* ptr);
+cyValueHeapObject = lib.cyValueHeapObject
+cyValueHeapObject.restype = CyValue
+cyValueHeapObject.argtypes = [POINTER(CyHeapObject)]
+
 # CyTypeId cyValueGetTypeId(CyValue val);
 cyValueGetTypeId = lib.cyValueGetTypeId
 cyValueGetTypeId.restype = CyTypeId
 cyValueGetTypeId.argtypes = [CyValue]
+
+# CyHeapObject* cyValueAsHeapObject(CyValue val);
+cyValueAsHeapObject = lib.cyValueAsHeapObject
+cyValueAsHeapObject.restype = POINTER(CyHeapObject)
+cyValueAsHeapObject.argtypes = [CyValue]
 
 # double cyValueAsNumber(CyValue val);
 cyValueAsNumber = lib.cyValueAsNumber
