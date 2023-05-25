@@ -129,7 +129,6 @@ types = {
 
 
 def typedef_int(w, d):
-    print(d)
     m = re.match(r'typedef (\w+) (\w*)', d)
     t = m[1]
     types[f'{m[2]}*'] = f'POINTER({m[2]})'
