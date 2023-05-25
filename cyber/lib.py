@@ -98,11 +98,14 @@ class CStr(Structure):
 class CyTypeId(c_uint32):
     ...
 
+class CyModuleId(c_uint32):
+    ...
+
 # typedef CyValue (*CyFunc)(CyVM* vm, CyValue* args, uint8_t nargs);
 CyFunc = CFUNCTYPE(CyValue, POINTER(CyVM), POINTER(CyValue), c_uint8)
 
-# typedef bool (*CyLoadModuleFunc)(CyVM* vm, CyModule* mod);
-CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyVM), POINTER(CyModule))
+# typedef bool (*CyLoadModuleFunc)(CyVM* vm, CyModuleId modId);
+CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyVM), CyModuleId)
 
 class CyHeapObject(Union):
     # unions not supported yet
@@ -173,13 +176,13 @@ cyVmSetUserData.argtypes = [POINTER(CyVM), c_void_p]
 cyVmAddModuleLoader = lib.cyVmAddModuleLoader
 cyVmAddModuleLoader.argtypes = [POINTER(CyVM), CStr, CyLoadModuleFunc]
 
-# void cyVmSetModuleFunc(CyVM* vm, CyModule* mod, CStr name, uint32_t numParams, CyFunc func);
+# void cyVmSetModuleFunc(CyVM* vm, CyModuleId modId, CStr name, uint32_t numParams, CyFunc func);
 cyVmSetModuleFunc = lib.cyVmSetModuleFunc
-cyVmSetModuleFunc.argtypes = [POINTER(CyVM), POINTER(CyModule), CStr, c_uint32, CyFunc]
+cyVmSetModuleFunc.argtypes = [POINTER(CyVM), CyModuleId, CStr, c_uint32, CyFunc]
 
-# void cyVmSetModuleVar(CyVM* vm, CyModule* mod, CStr name, CyValue val);
+# void cyVmSetModuleVar(CyVM* vm, CyModuleId modId, CStr name, CyValue val);
 cyVmSetModuleVar = lib.cyVmSetModuleVar
-cyVmSetModuleVar.argtypes = [POINTER(CyVM), POINTER(CyModule), CStr, CyValue]
+cyVmSetModuleVar.argtypes = [POINTER(CyVM), CyModuleId, CStr, CyValue]
 
 # void* cyVmAlloc(CyVM* vm, size_t size);
 cyVmAlloc = lib.cyVmAlloc
