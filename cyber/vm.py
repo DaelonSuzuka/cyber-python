@@ -44,7 +44,7 @@ def py_to_cyvalue(vm, value) -> CyValue:
         case builtins.int:
             return lib.cyValueInteger(value)
         case builtins.float:
-            return lib.cyValueNumber(value)
+            return lib.cyValueFloat(value)
         case builtins.str:
             return lib.cyValueGetOrAllocStringInfer(vm, cstr(value))
         case _:
@@ -59,8 +59,8 @@ def cyvalue_to_py(vm, cyvalue):
             return lib.cyValueAsBool(cyvalue)
         case CyType.CY_TypeInteger:
             return lib.cyValueAsInteger(cyvalue)
-        case CyType.CY_TypeNumber:
-            return lib.cyValueAsNumber(cyvalue)
+        case CyType.CY_TypeFloat:
+            return lib.cyValueAsFloat(cyvalue)
         case CyType.CY_TypeStaticAstring:
             return lib.cyValueToTempString(vm, cyvalue).charz.decode()
         case CyType.CY_TypeStaticUstring:
@@ -101,9 +101,9 @@ def generate_callback_wrapper(func):
                 case builtins.str:
                     _args.append(lib.cyValueToTempString(vm, args[i]).charz.decode())
                 case builtins.int:
-                    _args.append(int(lib.cyValueAsNumber(args[i])))
+                    _args.append(int(lib.cyValueAsFloat(args[i])))
                 case builtins.float:
-                    _args.append(lib.cyValueAsNumber(args[i]))
+                    _args.append(lib.cyValueAsFloat(args[i]))
                 case builtins.bool:
                     _args.append(lib.cyValueToBool(args[i]))
                 case lib.CyValue: # raw lib.cyValue

@@ -39,13 +39,13 @@ def test_eval_number():
 
     assert output == 1
     assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeNumber
+    assert cyber.last_output_type == CyType.CY_TypeFloat
 
     output = cyber.eval('1.5')
 
     assert output == 1.5
     assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeNumber
+    assert cyber.last_output_type == CyType.CY_TypeFloat
 
 
 def test_eval_cyvalue():
@@ -87,8 +87,8 @@ def test_eval_static_u_string():
 def test_eval_a_string():
     cyber = CyberVM()
     script = """
-    t = 'string'
-    s = '{t} interpolation'
+    var t = 'string'
+    var s = '{t} interpolation'
     s
     """
     output = cyber.eval(script)
@@ -101,8 +101,8 @@ def test_eval_a_string():
 def test_eval_u_string():
     cyber = CyberVM()
     script = """
-    t = '💕'
-    s = '{t} interpolation'
+    var t = '💕'
+    var s = '{t} interpolation'
     s
     """
     output = cyber.eval(script)
@@ -116,8 +116,8 @@ def test_eval_string_slice():
     cyber = CyberVM()
 
     script = """
-    t = 'string'
-    s = '{t}'
+    var t = 'string'
+    var s = '{t}'
     s[..3]
     """
     output = cyber.eval(script)
@@ -141,7 +141,7 @@ def test_eval_rawstring_slice():
     cyber = CyberVM()
 
     script = """
-    t = rawstring('rawstring')
+    var t = rawstring('rawstring')
     t[3..]
     """
     output = cyber.eval(script)

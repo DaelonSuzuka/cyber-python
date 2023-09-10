@@ -70,7 +70,7 @@ class CyType(Enum):
     CY_TypeEnum = 5
     CY_TypeSymbol = 6
     CY_TypeInteger = 7
-    CY_TypeNumber = 8
+    CY_TypeFloat = 8
     CY_TypeList = 9
     CY_TypeListIter = 10
     CY_TypeMap = 11
@@ -208,10 +208,10 @@ cyValueFalse = lib.cyValueFalse
 cyValueFalse.restype = CyValue
 cyValueFalse.argtypes = []
 
-# CyValue cyValueNumber(double n);
-cyValueNumber = lib.cyValueNumber
-cyValueNumber.restype = CyValue
-cyValueNumber.argtypes = [c_double]
+# CyValue cyValueFloat(double n);
+cyValueFloat = lib.cyValueFloat
+cyValueFloat.restype = CyValue
+cyValueFloat.argtypes = [c_double]
 
 # CyValue cyValueInteger(int n);
 cyValueInteger = lib.cyValueInteger
@@ -273,10 +273,10 @@ cyValueAsHeapObject = lib.cyValueAsHeapObject
 cyValueAsHeapObject.restype = POINTER(CyHeapObject)
 cyValueAsHeapObject.argtypes = [CyValue]
 
-# double cyValueAsNumber(CyValue val);
-cyValueAsNumber = lib.cyValueAsNumber
-cyValueAsNumber.restype = c_double
-cyValueAsNumber.argtypes = [CyValue]
+# double cyValueAsFloat(CyValue val);
+cyValueAsFloat = lib.cyValueAsFloat
+cyValueAsFloat.restype = c_double
+cyValueAsFloat.argtypes = [CyValue]
 
 # bool cyValueToBool(CyValue val);
 cyValueToBool = lib.cyValueToBool
