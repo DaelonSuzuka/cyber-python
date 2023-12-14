@@ -1,19 +1,21 @@
 # GENERATED FILE DO NOT EDIT #
+# ruff:  noqa: F401
 
 from ctypes import (
     Structure,
-    Union,
     CFUNCTYPE,
     POINTER,
     c_void_p,
     c_char_p,
     c_bool,
     c_size_t,
-    c_int,
     c_double,
     c_uint64,
     c_uint32,
     c_uint8,
+    c_int64,
+    c_int32,
+    c_int,
 )
 from pathlib import Path
 import sys
@@ -21,317 +23,503 @@ from enum import Enum
 import platform
 
 
-base_path = Path(__file__).parent / 'lib'
+base_path = Path(__file__).parent / "lib"
 
-if sys.platform == 'win32':
+if sys.platform == "win32":
     from ctypes import WinDLL
-    path = base_path / 'cyber.dll'
+
+    path = base_path / "libcyber-windows-x64.dll"
     lib = WinDLL(path.as_posix())
-elif sys.platform == 'linux':
+elif sys.platform == "linux":
     from ctypes import CDLL
-    path = base_path / 'libcyber.so'
+
+    path = base_path / "libcyber-linux-x64.so"
     lib = CDLL(path.as_posix())
-elif sys.platform == 'darwin':
-    if platform.machine() == 'arm64':
+elif sys.platform == "darwin":
+    if platform.machine() == "arm64":
         from ctypes import CDLL
-        path = base_path / 'libcyber-arm64.dylib'
+
+        path = base_path / "libcyber-macos-arm64.a"
         lib = CDLL(path.as_posix())
     else:
         from ctypes import CDLL
-        path = base_path / 'libcyber.dylib'
+
+        path = base_path / "libcyber-macos-x64.dylib"
         lib = CDLL(path.as_posix())
 
 
 # GENERATED FILE DO NOT EDIT #
 
-class CyVM(Structure):
+class CsVM(Structure):
     ...
 
-class CyModule(Structure):
+class CsValue(c_uint64):
     ...
 
-class CyValue(c_uint64):
+class CsValueSlice(Structure):
+    _fields_ = [('ptr', POINTER(CsValue)), ('len', c_size_t)]
+
+class CsResolverResult(Structure):
     ...
 
-class CyResultCode(Enum):
-    CY_Success = 0
-    CY_ErrorToken = 1
-    CY_ErrorParse = 2
-    CY_ErrorCompile = 3
-    CY_ErrorPanic = 4
-    CY_ErrorUnknown = 5
-
-class CyType(Enum):
-    CY_TypeNone = 0
-    CY_TypeBoolean = 1
-    CY_TypeError = 2
-    CY_TypeStaticAstring = 3
-    CY_TypeStaticUstring = 4
-    CY_TypeEnum = 5
-    CY_TypeSymbol = 6
-    CY_TypeInteger = 7
-    CY_TypeFloat = 8
-    CY_TypeList = 9
-    CY_TypeListIter = 10
-    CY_TypeMap = 11
-    CY_TypeMapIter = 12
-    CY_TypeClosure = 13
-    CY_TypeLambda = 14
-    CY_TypeAstring = 15
-    CY_TypeUstring = 16
-    CY_TypeStringSlice = 17
-    CY_TypeRawString = 18
-    CY_TypeRawStringSlice = 19
-    CY_TypeFiber = 20
-    CY_TypeBox = 21
-    CY_TypeNativeFunc1 = 22
-    CY_TypeTccState = 23
-    CY_TypePointer = 24
-    CY_TypeFile = 25
-    CY_TypeDir = 26
-    CY_TypeDirIter = 27
-    CY_TypeMetaType = 28
-
-class CStr(Structure):
-    _fields_ = [('charz', c_char_p), ('len', c_size_t)]
-
-class CyTypeId(c_uint32):
+class CsModuleLoaderResult(Structure):
     ...
 
-class CyModuleId(c_uint32):
+class CsModule(Structure):
     ...
 
-# typedef CyValue (*CyFunc)(CyVM* vm, CyValue* args, uint8_t nargs);
-CyFunc = CFUNCTYPE(CyValue, POINTER(CyVM), POINTER(CyValue), c_uint8)
+class CsResultCode(Enum):
+    CS_SUCCESS = 0
+    CS_ERROR_TOKEN = 1
+    CS_ERROR_PARSE = 2
+    CS_ERROR_COMPILE = 3
+    CS_ERROR_PANIC = 4
+    CS_ERROR_UNKNOWN = 5
 
-# typedef bool (*CyLoadModuleFunc)(CyVM* vm, CyModuleId modId);
-CyLoadModuleFunc = CFUNCTYPE(c_bool, POINTER(CyVM), CyModuleId)
+class CsType(Enum):
+    CS_TYPE_NONE = 0
+    CS_TYPE_BOOLEAN = 1
+    CS_TYPE_ERROR = 2
+    CS_TYPE_PLACEHOLDER1 = 3
+    CS_TYPE_PLACEHOLDER2 = 4
+    CS_TYPE_PLACEHOLDER3 = 5
+    CS_TYPE_SYMBOL = 6
+    CS_TYPE_INTEGER = 7
+    CS_TYPE_FLOAT = 8
+    CS_TYPE_TUPLE = 9
+    CS_TYPE_LIST = 10
+    CS_TYPE_LISTITER = 11
+    CS_TYPE_MAP = 12
+    CS_TYPE_MAPITER = 13
+    CS_TYPE_CLOSURE = 14
+    CS_TYPE_LAMBDA = 15
+    CS_TYPE_STRING = 16
+    CS_TYPE_ARRAY = 17
+    CS_TYPE_FIBER = 18
+    CS_TYPE_BOX = 19
+    CS_TYPE_HOSTFUNC = 20
+    CS_TYPE_TCCSTATE = 21
+    CS_TYPE_POINTER = 22
+    CS_TYPE_METATYPE = 23
 
-class CyHeapObject(Union):
-    # unions not supported yet
+class CsTypeId(c_uint32):
     ...
 
-# CStr cyGetFullVersion();
-cyGetFullVersion = lib.cyGetFullVersion
-cyGetFullVersion.restype = CStr
-cyGetFullVersion.argtypes = []
+class CsStr(Structure):
+    _fields_ = [('buf', c_char_p), ('len', c_size_t)]
 
-# CStr cyGetVersion();
-cyGetVersion = lib.cyGetVersion
-cyGetVersion.restype = CStr
-cyGetVersion.argtypes = []
+csGetFullVersion = lib.csGetFullVersion
+"""CsStr csGetFullVersion();"""
+csGetFullVersion.restype = CsStr
+csGetFullVersion.argtypes = []
 
-# CStr cyGetBuild();
-cyGetBuild = lib.cyGetBuild
-cyGetBuild.restype = CStr
-cyGetBuild.argtypes = []
+csGetVersion = lib.csGetVersion
+"""CsStr csGetVersion();"""
+csGetVersion.restype = CsStr
+csGetVersion.argtypes = []
 
-# CStr cyGetCommit();
-cyGetCommit = lib.cyGetCommit
-cyGetCommit.restype = CStr
-cyGetCommit.argtypes = []
+csGetBuild = lib.csGetBuild
+"""CsStr csGetBuild();"""
+csGetBuild.restype = CsStr
+csGetBuild.argtypes = []
 
-# CyVM* cyVmCreate();
-cyVmCreate = lib.cyVmCreate
-cyVmCreate.restype = POINTER(CyVM)
-cyVmCreate.argtypes = []
+csGetCommit = lib.csGetCommit
+"""CsStr csGetCommit();"""
+csGetCommit.restype = CsStr
+csGetCommit.argtypes = []
 
-# void cyVmDestroy(CyVM* vm);
-cyVmDestroy = lib.cyVmDestroy
-cyVmDestroy.argtypes = [POINTER(CyVM)]
+class CsModule(Structure):
+    _fields_ = [('sym', c_void_p)]
 
-# CyResultCode cyVmEval(CyVM* vm, CStr src, CyValue* outVal);
-cyVmEval = lib.cyVmEval
-cyVmEval.restype = c_int
-cyVmEval.argtypes = [POINTER(CyVM), CStr, POINTER(CyValue)]
+CsFuncFn = CFUNCTYPE(CsValue, POINTER(CsVM), POINTER(CsValue), c_uint8)
+"""typedef CsValue (*CsFuncFn)(CsVM* vm, const CsValue* args, uint8_t nargs);"""
 
-# CyResultCode cyVmValidate(CyVM* vm, CStr src);
-cyVmValidate = lib.cyVmValidate
-cyVmValidate.restype = c_int
-cyVmValidate.argtypes = [POINTER(CyVM), CStr]
+CsInlineFuncFn = CFUNCTYPE(None, POINTER(CsVM), POINTER(c_uint8), POINTER(CsValue), c_uint8)
+"""typedef void (*CsInlineFuncFn)(CsVM* vm, uint8_t* pc, const CsValue* args, uint8_t nargs);"""
 
-# CStr cyVmGetLastErrorReport(CyVM* vm);
-cyVmGetLastErrorReport = lib.cyVmGetLastErrorReport
-cyVmGetLastErrorReport.restype = CStr
-cyVmGetLastErrorReport.argtypes = [POINTER(CyVM)]
+CsResolverOnReceiptFn = CFUNCTYPE(None, POINTER(CsVM), POINTER(CsResolverResult))
+"""typedef void (*CsResolverOnReceiptFn)(CsVM* vm, CsResolverResult* res);"""
 
-# void cyVmRelease(CyVM* vm, CyValue val);
-cyVmRelease = lib.cyVmRelease
-cyVmRelease.argtypes = [POINTER(CyVM), CyValue]
+class CsResolverResult(Structure):
+    _fields_ = [('uri', c_char_p), ('uriLen', c_size_t), ('onReceipt', CsResolverOnReceiptFn)]
 
-# void cyVmRetain(CyVM* vm, CyValue val);
-cyVmRetain = lib.cyVmRetain
-cyVmRetain.argtypes = [POINTER(CyVM), CyValue]
+CsResolverFn = CFUNCTYPE(c_bool, POINTER(CsVM), c_uint32, CsStr, CsStr, POINTER(CsResolverResult))
+"""typedef bool (*CsResolverFn)(CsVM* vm, uint32_t chunkId, CsStr curUri, CsStr spec, CsResolverResult* res);"""
 
-# void* cyVmGetUserData(CyVM* vm);
-cyVmGetUserData = lib.cyVmGetUserData
-cyVmGetUserData.restype = c_void_p
-cyVmGetUserData.argtypes = [POINTER(CyVM)]
+CsModuleOnTypeLoadFn = CFUNCTYPE(None, POINTER(CsVM), CsModule)
+"""typedef void (*CsModuleOnTypeLoadFn)(CsVM* vm, CsModule mod);"""
 
-# void cyVmSetUserData(CyVM* vm, void* userData);
-cyVmSetUserData = lib.cyVmSetUserData
-cyVmSetUserData.argtypes = [POINTER(CyVM), c_void_p]
+CsModuleOnLoadFn = CFUNCTYPE(None, POINTER(CsVM), CsModule)
+"""typedef void (*CsModuleOnLoadFn)(CsVM* vm, CsModule mod);"""
 
-# void cyVmAddModuleLoader(CyVM* vm, CStr name, CyLoadModuleFunc func);
-cyVmAddModuleLoader = lib.cyVmAddModuleLoader
-cyVmAddModuleLoader.argtypes = [POINTER(CyVM), CStr, CyLoadModuleFunc]
+CsModuleOnDestroyFn = CFUNCTYPE(None, POINTER(CsVM), CsModule)
+"""typedef void (*CsModuleOnDestroyFn)(CsVM* vm, CsModule mod);"""
 
-# void cyVmSetModuleFunc(CyVM* vm, CyModuleId modId, CStr name, uint32_t numParams, CyFunc func);
-cyVmSetModuleFunc = lib.cyVmSetModuleFunc
-cyVmSetModuleFunc.argtypes = [POINTER(CyVM), CyModuleId, CStr, c_uint32, CyFunc]
+class CsFuncInfo(Structure):
+    _fields_ = [('mod', CsModule), ('name', CsStr), ('funcSigId', c_uint32), ('idx', c_uint32)]
 
-# void cyVmSetModuleVar(CyVM* vm, CyModuleId modId, CStr name, CyValue val);
-cyVmSetModuleVar = lib.cyVmSetModuleVar
-cyVmSetModuleVar.argtypes = [POINTER(CyVM), CyModuleId, CStr, CyValue]
+class CsFuncType(Enum):
+    CS_FUNC_STANDARD = 0
+    CS_FUNC_INLINE = 1
 
-# void* cyVmAlloc(CyVM* vm, size_t size);
-cyVmAlloc = lib.cyVmAlloc
-cyVmAlloc.restype = c_void_p
-cyVmAlloc.argtypes = [POINTER(CyVM), c_size_t]
+class CsFuncResult(Structure):
+    _fields_ = [('ptr', c_void_p), ('type', c_uint8)]
 
-# void cyVmFree(CyVM* vm, void* ptr, size_t len);
-cyVmFree = lib.cyVmFree
-cyVmFree.argtypes = [POINTER(CyVM), c_void_p, c_size_t]
+CsFuncLoaderFn = CFUNCTYPE(c_bool, POINTER(CsVM), CsFuncInfo, POINTER(CsFuncResult))
+"""typedef bool (*CsFuncLoaderFn)(CsVM* vm, CsFuncInfo funcInfo, CsFuncResult* out);"""
 
-# CyValue cyValueNone();
-cyValueNone = lib.cyValueNone
-cyValueNone.restype = CyValue
-cyValueNone.argtypes = []
+class CsVarInfo(Structure):
+    _fields_ = [('mod', CsModule), ('name', CsStr), ('idx', c_uint32)]
 
-# CyValue cyValueTrue();
-cyValueTrue = lib.cyValueTrue
-cyValueTrue.restype = CyValue
-cyValueTrue.argtypes = []
+CsVarLoaderFn = CFUNCTYPE(c_bool, POINTER(CsVM), CsVarInfo, POINTER(CsValue))
+"""typedef bool (*CsVarLoaderFn)(CsVM* vm, CsVarInfo funcInfo, CsValue* out);"""
 
-# CyValue cyValueFalse();
-cyValueFalse = lib.cyValueFalse
-cyValueFalse.restype = CyValue
-cyValueFalse.argtypes = []
+class CsTypeInfo(Structure):
+    _fields_ = [('mod', CsModule), ('name', CsStr), ('idx', c_uint32)]
 
-# CyValue cyValueFloat(double n);
-cyValueFloat = lib.cyValueFloat
-cyValueFloat.restype = CyValue
-cyValueFloat.argtypes = [c_double]
+class CsTypeType(Enum):
+    CS_TYPE_OBJECT = 0
+    CS_TYPE_CORE_OBJECT = 1
 
-# CyValue cyValueInteger(int n);
-cyValueInteger = lib.cyValueInteger
-cyValueInteger.restype = CyValue
-cyValueInteger.argtypes = [c_int]
+CsObjectGetChildrenFn = CFUNCTYPE(CsValueSlice, POINTER(CsVM), c_void_p)
+"""typedef CsValueSlice (*CsObjectGetChildrenFn)(CsVM* vm, void* obj);"""
 
-# CyValue cyValueGetOrAllocStringInfer(CyVM* vm, CStr str);
-cyValueGetOrAllocStringInfer = lib.cyValueGetOrAllocStringInfer
-cyValueGetOrAllocStringInfer.restype = CyValue
-cyValueGetOrAllocStringInfer.argtypes = [POINTER(CyVM), CStr]
+CsObjectFinalizerFn = CFUNCTYPE(None, POINTER(CsVM), c_void_p)
+"""typedef void (*CsObjectFinalizerFn)(CsVM* vm, void* obj);"""
 
-# CyValue cyValueGetOrAllocAstring(CyVM* vm, CStr str);
-cyValueGetOrAllocAstring = lib.cyValueGetOrAllocAstring
-cyValueGetOrAllocAstring.restype = CyValue
-cyValueGetOrAllocAstring.argtypes = [POINTER(CyVM), CStr]
+class CsTypeResult(Structure):
+    ...
 
-# CyValue cyValueGetOrAllocUstring(CyVM* vm, CStr str, uint32_t charLen);
-cyValueGetOrAllocUstring = lib.cyValueGetOrAllocUstring
-cyValueGetOrAllocUstring.restype = CyValue
-cyValueGetOrAllocUstring.argtypes = [POINTER(CyVM), CStr, c_uint32]
+CsTypeLoaderFn = CFUNCTYPE(c_bool, POINTER(CsVM), CsTypeInfo, POINTER(CsTypeResult))
+"""typedef bool (*CsTypeLoaderFn)(CsVM* vm, CsTypeInfo typeInfo, CsTypeResult* out);"""
 
-# CyValue cyValueAllocList(CyVM* vm);
-cyValueAllocList = lib.cyValueAllocList
-cyValueAllocList.restype = CyValue
-cyValueAllocList.argtypes = [POINTER(CyVM)]
+CsModuleOnReceiptFn = CFUNCTYPE(None, POINTER(CsVM), POINTER(CsModuleLoaderResult))
+"""typedef void (*CsModuleOnReceiptFn)(CsVM* vm, CsModuleLoaderResult* res);"""
 
-# CyValue cyValueAllocMap(CyVM* vm);
-cyValueAllocMap = lib.cyValueAllocMap
-cyValueAllocMap.restype = CyValue
-cyValueAllocMap.argtypes = [POINTER(CyVM)]
+class CsModuleLoaderResult(Structure):
+    _fields_ = [('src', c_char_p), ('srcLen', c_size_t)]
 
-# CyValue cyValueAllocNativeFunc(CyVM* vm, CyFunc func, uint32_t numParams);
-cyValueAllocNativeFunc = lib.cyValueAllocNativeFunc
-cyValueAllocNativeFunc.restype = CyValue
-cyValueAllocNativeFunc.argtypes = [POINTER(CyVM), CyFunc, c_uint32]
+CsModuleLoaderFn = CFUNCTYPE(c_bool, POINTER(CsVM), CsStr, POINTER(CsModuleLoaderResult))
+"""typedef bool (*CsModuleLoaderFn)(CsVM* vm, CsStr resolvedSpec, CsModuleLoaderResult* out);"""
 
-# CyValue cyValueAllocPointer(CyVM* vm, void* ptr);
-cyValueAllocPointer = lib.cyValueAllocPointer
-cyValueAllocPointer.restype = CyValue
-cyValueAllocPointer.argtypes = [POINTER(CyVM), c_void_p]
+CsPrintFn = CFUNCTYPE(None, POINTER(CsVM), CsStr)
+"""typedef void (*CsPrintFn)(CsVM* vm, CsStr str);"""
 
-# CyValue cyValueTagLiteral(CyVM* vm, CStr str);
-cyValueTagLiteral = lib.cyValueTagLiteral
-cyValueTagLiteral.restype = CyValue
-cyValueTagLiteral.argtypes = [POINTER(CyVM), CStr]
+csCreate = lib.csCreate
+"""CsVM* csCreate();"""
+csCreate.restype = POINTER(CsVM)
+csCreate.argtypes = []
 
-# CyValue cyValueHeapObject(CyHeapObject* ptr);
-cyValueHeapObject = lib.cyValueHeapObject
-cyValueHeapObject.restype = CyValue
-cyValueHeapObject.argtypes = [POINTER(CyHeapObject)]
+csDeinit = lib.csDeinit
+"""void csDeinit(CsVM* vm);"""
+csDeinit.argtypes = [POINTER(CsVM)]
 
-# CyTypeId cyValueGetTypeId(CyValue val);
-cyValueGetTypeId = lib.cyValueGetTypeId
-cyValueGetTypeId.restype = CyTypeId
-cyValueGetTypeId.argtypes = [CyValue]
+csDestroy = lib.csDestroy
+"""void csDestroy(CsVM* vm);"""
+csDestroy.argtypes = [POINTER(CsVM)]
 
-# CyHeapObject* cyValueAsHeapObject(CyValue val);
-cyValueAsHeapObject = lib.cyValueAsHeapObject
-cyValueAsHeapObject.restype = POINTER(CyHeapObject)
-cyValueAsHeapObject.argtypes = [CyValue]
+csGetResolver = lib.csGetResolver
+"""CsResolverFn csGetResolver(CsVM* vm);"""
+csGetResolver.restype = CsResolverFn
+csGetResolver.argtypes = [POINTER(CsVM)]
 
-# double cyValueAsFloat(CyValue val);
-cyValueAsFloat = lib.cyValueAsFloat
-cyValueAsFloat.restype = c_double
-cyValueAsFloat.argtypes = [CyValue]
+csSetResolver = lib.csSetResolver
+"""void csSetResolver(CsVM* vm, CsResolverFn resolver);"""
+csSetResolver.argtypes = [POINTER(CsVM), CsResolverFn]
 
-# bool cyValueToBool(CyValue val);
-cyValueToBool = lib.cyValueToBool
-cyValueToBool.restype = c_bool
-cyValueToBool.argtypes = [CyValue]
+# csDefaultResolver = lib.csDefaultResolver
+"""bool csDefaultResolver(CsVM* vm, uint32_t chunkId, CsStr curUri, CsStr spec, CsStr* outUri);"""
+# csDefaultResolver.restype = c_bool
+# csDefaultResolver.argtypes = [POINTER(CsVM), c_uint32, CsStr, CsStr, POINTER(CsStr)]
 
-# bool cyValueAsBool(CyValue val);
-cyValueAsBool = lib.cyValueAsBool
-cyValueAsBool.restype = c_bool
-cyValueAsBool.argtypes = [CyValue]
+csGetModuleLoader = lib.csGetModuleLoader
+"""CsModuleLoaderFn csGetModuleLoader(CsVM* vm);"""
+csGetModuleLoader.restype = CsModuleLoaderFn
+csGetModuleLoader.argtypes = [POINTER(CsVM)]
 
-# int cyValueAsInteger(CyValue val);
-cyValueAsInteger = lib.cyValueAsInteger
-cyValueAsInteger.restype = c_int
-cyValueAsInteger.argtypes = [CyValue]
+csSetModuleLoader = lib.csSetModuleLoader
+"""void csSetModuleLoader(CsVM* vm, CsModuleLoaderFn loader);"""
+csSetModuleLoader.argtypes = [POINTER(CsVM), CsModuleLoaderFn]
 
-# uint32_t cyValueAsTagLiteralId(CyValue val);
-cyValueAsTagLiteralId = lib.cyValueAsTagLiteralId
-cyValueAsTagLiteralId.restype = c_uint32
-cyValueAsTagLiteralId.argtypes = [CyValue]
+csDefaultModuleLoader = lib.csDefaultModuleLoader
+"""bool csDefaultModuleLoader(CsVM* vm, CsStr resolvedSpec, CsModuleLoaderResult* out);"""
+csDefaultModuleLoader.restype = c_bool
+csDefaultModuleLoader.argtypes = [POINTER(CsVM), CsStr, POINTER(CsModuleLoaderResult)]
 
-# CStr cyValueToTempString(CyVM* vm, CyValue val);
-cyValueToTempString = lib.cyValueToTempString
-cyValueToTempString.restype = CStr
-cyValueToTempString.argtypes = [POINTER(CyVM), CyValue]
+csGetPrint = lib.csGetPrint
+"""CsPrintFn csGetPrint(CsVM* vm);"""
+csGetPrint.restype = CsPrintFn
+csGetPrint.argtypes = [POINTER(CsVM)]
 
-# CStr cyValueToTempRawString(CyVM* vm, CyValue val);
-cyValueToTempRawString = lib.cyValueToTempRawString
-cyValueToTempRawString.restype = CStr
-cyValueToTempRawString.argtypes = [POINTER(CyVM), CyValue]
+csSetPrint = lib.csSetPrint
+"""void csSetPrint(CsVM* vm, CsPrintFn print);"""
+csSetPrint.argtypes = [POINTER(CsVM), CsPrintFn]
 
-# size_t cyListLen(CyValue list);
-cyListLen = lib.cyListLen
-cyListLen.restype = c_size_t
-cyListLen.argtypes = [CyValue]
+csEval = lib.csEval
+"""CsResultCode csEval(CsVM* vm, CsStr src, CsValue* outVal);"""
+csEval.restype = c_int
+csEval.argtypes = [POINTER(CsVM), CsStr, POINTER(CsValue)]
 
-# size_t cyListCap(CyValue list);
-cyListCap = lib.cyListCap
-cyListCap.restype = c_size_t
-cyListCap.argtypes = [CyValue]
+csValidate = lib.csValidate
+"""CsResultCode csValidate(CsVM* vm, CsStr src);"""
+csValidate.restype = c_int
+csValidate.argtypes = [POINTER(CsVM), CsStr]
 
-# CyValue cyListGet(CyVM* vm, CyValue list, size_t idx);
-cyListGet = lib.cyListGet
-cyListGet.restype = CyValue
-cyListGet.argtypes = [POINTER(CyVM), CyValue, c_size_t]
+csNewLastErrorReport = lib.csNewLastErrorReport
+"""const char* csNewLastErrorReport(CsVM* vm);"""
+csNewLastErrorReport.restype = c_char_p
+csNewLastErrorReport.argtypes = [POINTER(CsVM)]
 
-# void cyListSet(CyVM* vm, CyValue list, size_t idx, CyValue val);
-cyListSet = lib.cyListSet
-cyListSet.argtypes = [POINTER(CyVM), CyValue, c_size_t, CyValue]
+csGetUserData = lib.csGetUserData
+"""void* csGetUserData(CsVM* vm);"""
+csGetUserData.restype = c_void_p
+csGetUserData.argtypes = [POINTER(CsVM)]
 
-# void cyListAppend(CyVM* vm, CyValue list, CyValue val);
-cyListAppend = lib.cyListAppend
-cyListAppend.argtypes = [POINTER(CyVM), CyValue, CyValue]
+csSetUserData = lib.csSetUserData
+"""void csSetUserData(CsVM* vm, void* userData);"""
+csSetUserData.argtypes = [POINTER(CsVM), c_void_p]
 
-# void cyListInsert(CyVM* vm, CyValue list, size_t idx, CyValue val);
-cyListInsert = lib.cyListInsert
-cyListInsert.argtypes = [POINTER(CyVM), CyValue, c_size_t, CyValue]
+# csVerbose = lib.csVerbose
+"""extern bool csVerbose;"""
 
+csDeclareUntypedFunc = lib.csDeclareUntypedFunc
+"""void csDeclareUntypedFunc(CsModule mod, const char* name, uint32_t numParams, CsFuncFn fn);"""
+csDeclareUntypedFunc.argtypes = [CsModule, c_char_p, c_uint32, CsFuncFn]
+
+csDeclareFunc = lib.csDeclareFunc
+"""void csDeclareFunc(CsModule mod, const char* name, const CsTypeId* params, uint32_t numParams, CsTypeId retType, CsFuncFn fn);"""
+csDeclareFunc.argtypes = [CsModule, c_char_p, POINTER(CsTypeId), c_uint32, CsTypeId, CsFuncFn]
+
+csDeclareVar = lib.csDeclareVar
+"""void csDeclareVar(CsModule mod, const char* name, CsValue val);"""
+csDeclareVar.argtypes = [CsModule, c_char_p, CsValue]
+
+csRelease = lib.csRelease
+"""void csRelease(CsVM* vm, CsValue val);"""
+csRelease.argtypes = [POINTER(CsVM), CsValue]
+
+csRetain = lib.csRetain
+"""void csRetain(CsVM* vm, CsValue val);"""
+csRetain.argtypes = [POINTER(CsVM), CsValue]
+
+class CsGCResult(Structure):
+    _fields_ = [('numCycFreed', c_uint32), ('numObjFreed', c_uint32)]
+
+csPerformGC = lib.csPerformGC
+"""CsGCResult csPerformGC(CsVM* vm);"""
+csPerformGC.restype = CsGCResult
+csPerformGC.argtypes = [POINTER(CsVM)]
+
+csGetGlobalRC = lib.csGetGlobalRC
+"""size_t csGetGlobalRC(CsVM* vm);"""
+csGetGlobalRC.restype = c_size_t
+csGetGlobalRC.argtypes = [POINTER(CsVM)]
+
+csCountObjects = lib.csCountObjects
+"""size_t csCountObjects(CsVM* vm);"""
+csCountObjects.restype = c_size_t
+csCountObjects.argtypes = [POINTER(CsVM)]
+
+csAlloc = lib.csAlloc
+"""void* csAlloc(CsVM* vm, size_t size);"""
+csAlloc.restype = c_void_p
+csAlloc.argtypes = [POINTER(CsVM), c_size_t]
+
+csFree = lib.csFree
+"""void csFree(CsVM* vm, void* ptr, size_t len);"""
+csFree.argtypes = [POINTER(CsVM), c_void_p, c_size_t]
+
+csFreeStr = lib.csFreeStr
+"""void csFreeStr(CsVM* vm, CsStr str);"""
+csFreeStr.argtypes = [POINTER(CsVM), CsStr]
+
+csFreeStrZ = lib.csFreeStrZ
+"""void csFreeStrZ(CsVM* vm, const char* str);"""
+csFreeStrZ.argtypes = [POINTER(CsVM), c_char_p]
+
+csNone = lib.csNone
+"""CsValue csNone();"""
+csNone.restype = CsValue
+csNone.argtypes = []
+
+csTrue = lib.csTrue
+"""CsValue csTrue();"""
+csTrue.restype = CsValue
+csTrue.argtypes = []
+
+csFalse = lib.csFalse
+"""CsValue csFalse();"""
+csFalse.restype = CsValue
+csFalse.argtypes = []
+
+csBool = lib.csBool
+"""CsValue csBool(bool b);"""
+csBool.restype = CsValue
+csBool.argtypes = [c_bool]
+
+csInteger = lib.csInteger
+"""CsValue csInteger(int64_t n);"""
+csInteger.restype = CsValue
+csInteger.argtypes = [c_int64]
+
+csInteger32 = lib.csInteger32
+"""CsValue csInteger32(int32_t n);"""
+csInteger32.restype = CsValue
+csInteger32.argtypes = [c_int32]
+
+csFloat = lib.csFloat
+"""CsValue csFloat(double f);"""
+csFloat.restype = CsValue
+csFloat.argtypes = [c_double]
+
+csHostObject = lib.csHostObject
+"""CsValue csHostObject(void* ptr);"""
+csHostObject.restype = CsValue
+csHostObject.argtypes = [c_void_p]
+
+csVmObject = lib.csVmObject
+"""CsValue csVmObject(void* ptr);"""
+csVmObject.restype = CsValue
+csVmObject.argtypes = [c_void_p]
+
+csSymbol = lib.csSymbol
+"""CsValue csSymbol(CsVM* vm, CsStr str);"""
+csSymbol.restype = CsValue
+csSymbol.argtypes = [POINTER(CsVM), CsStr]
+
+csNewString = lib.csNewString
+"""CsValue csNewString(CsVM* vm, CsStr str);"""
+csNewString.restype = CsValue
+csNewString.argtypes = [POINTER(CsVM), CsStr]
+
+csNewAstring = lib.csNewAstring
+"""CsValue csNewAstring(CsVM* vm, CsStr str);"""
+csNewAstring.restype = CsValue
+csNewAstring.argtypes = [POINTER(CsVM), CsStr]
+
+csNewUstring = lib.csNewUstring
+"""CsValue csNewUstring(CsVM* vm, CsStr str, uint32_t charLen);"""
+csNewUstring.restype = CsValue
+csNewUstring.argtypes = [POINTER(CsVM), CsStr, c_uint32]
+
+csNewTuple = lib.csNewTuple
+"""CsValue csNewTuple(CsVM* vm, const CsValue* vals, size_t len);"""
+csNewTuple.restype = CsValue
+csNewTuple.argtypes = [POINTER(CsVM), POINTER(CsValue), c_size_t]
+
+csNewEmptyList = lib.csNewEmptyList
+"""CsValue csNewEmptyList(CsVM* vm);"""
+csNewEmptyList.restype = CsValue
+csNewEmptyList.argtypes = [POINTER(CsVM)]
+
+csNewList = lib.csNewList
+"""CsValue csNewList(CsVM* vm, const CsValue* vals, size_t len);"""
+csNewList.restype = CsValue
+csNewList.argtypes = [POINTER(CsVM), POINTER(CsValue), c_size_t]
+
+csNewEmptyMap = lib.csNewEmptyMap
+"""CsValue csNewEmptyMap(CsVM* vm);"""
+csNewEmptyMap.restype = CsValue
+csNewEmptyMap.argtypes = [POINTER(CsVM)]
+
+csNewUntypedFunc = lib.csNewUntypedFunc
+"""CsValue csNewUntypedFunc(CsVM* vm, uint32_t numParams, CsFuncFn func);"""
+csNewUntypedFunc.restype = CsValue
+csNewUntypedFunc.argtypes = [POINTER(CsVM), c_uint32, CsFuncFn]
+
+csNewFunc = lib.csNewFunc
+"""CsValue csNewFunc(CsVM* vm, const CsTypeId* params, uint32_t numParams, CsTypeId retType, CsFuncFn func);"""
+csNewFunc.restype = CsValue
+csNewFunc.argtypes = [POINTER(CsVM), POINTER(CsTypeId), c_uint32, CsTypeId, CsFuncFn]
+
+csNewPointer = lib.csNewPointer
+"""CsValue csNewPointer(CsVM* vm, void* ptr);"""
+csNewPointer.restype = CsValue
+csNewPointer.argtypes = [POINTER(CsVM), c_void_p]
+
+csNewHostObject = lib.csNewHostObject
+"""CsValue csNewHostObject(CsVM* vm, CsTypeId typeId, size_t n);"""
+csNewHostObject.restype = CsValue
+csNewHostObject.argtypes = [POINTER(CsVM), CsTypeId, c_size_t]
+
+csNewHostObjectPtr = lib.csNewHostObjectPtr
+"""void* csNewHostObjectPtr(CsVM* vm, CsTypeId typeId, size_t n);"""
+csNewHostObjectPtr.restype = c_void_p
+csNewHostObjectPtr.argtypes = [POINTER(CsVM), CsTypeId, c_size_t]
+
+csNewVmObject = lib.csNewVmObject
+"""CsValue csNewVmObject(CsVM* vm, CsTypeId typeId);"""
+csNewVmObject.restype = CsValue
+csNewVmObject.argtypes = [POINTER(CsVM), CsTypeId]
+
+csGetTypeId = lib.csGetTypeId
+"""CsTypeId csGetTypeId(CsValue val);"""
+csGetTypeId.restype = CsTypeId
+csGetTypeId.argtypes = [CsValue]
+
+csAsFloat = lib.csAsFloat
+"""double csAsFloat(CsValue val);"""
+csAsFloat.restype = c_double
+csAsFloat.argtypes = [CsValue]
+
+csToBool = lib.csToBool
+"""bool csToBool(CsValue val);"""
+csToBool.restype = c_bool
+csToBool.argtypes = [CsValue]
+
+csAsBool = lib.csAsBool
+"""bool csAsBool(CsValue val);"""
+csAsBool.restype = c_bool
+csAsBool.argtypes = [CsValue]
+
+csAsInteger = lib.csAsInteger
+"""int64_t csAsInteger(CsValue val);"""
+csAsInteger.restype = c_int64
+csAsInteger.argtypes = [CsValue]
+
+csAsSymbolId = lib.csAsSymbolId
+"""uint32_t csAsSymbolId(CsValue val);"""
+csAsSymbolId.restype = c_uint32
+csAsSymbolId.argtypes = [CsValue]
+
+csToTempString = lib.csToTempString
+"""CsStr csToTempString(CsVM* vm, CsValue val);"""
+csToTempString.restype = CsStr
+csToTempString.argtypes = [POINTER(CsVM), CsValue]
+
+# csToTempRawString = lib.csToTempRawString
+"""CsStr csToTempRawString(CsVM* vm, CsValue val);"""
+# csToTempRawString.restype = CsStr
+# csToTempRawString.argtypes = [POINTER(CsVM), CsValue]
+
+csAsHostObject = lib.csAsHostObject
+"""void* csAsHostObject(CsValue val);"""
+csAsHostObject.restype = c_void_p
+csAsHostObject.argtypes = [CsValue]
+
+csListLen = lib.csListLen
+"""size_t csListLen(CsValue list);"""
+csListLen.restype = c_size_t
+csListLen.argtypes = [CsValue]
+
+csListCap = lib.csListCap
+"""size_t csListCap(CsValue list);"""
+csListCap.restype = c_size_t
+csListCap.argtypes = [CsValue]
+
+csListGet = lib.csListGet
+"""CsValue csListGet(CsVM* vm, CsValue list, size_t idx);"""
+csListGet.restype = CsValue
+csListGet.argtypes = [POINTER(CsVM), CsValue, c_size_t]
+
+csListSet = lib.csListSet
+"""void csListSet(CsVM* vm, CsValue list, size_t idx, CsValue val);"""
+csListSet.argtypes = [POINTER(CsVM), CsValue, c_size_t, CsValue]
+
+csListAppend = lib.csListAppend
+"""void csListAppend(CsVM* vm, CsValue list, CsValue val);"""
+csListAppend.argtypes = [POINTER(CsVM), CsValue, CsValue]
+
+csListInsert = lib.csListInsert
+"""void csListInsert(CsVM* vm, CsValue list, size_t idx, CsValue val);"""
+csListInsert.argtypes = [POINTER(CsVM), CsValue, c_size_t, CsValue]

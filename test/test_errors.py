@@ -1,7 +1,7 @@
 from cyber import (
     CyberVM,
-    CyResultCode,
-    CyType,
+    CsResultCode,
+    CsType,
     CyberTokenError,
     CyberParseError,
     CyberCompileError,
@@ -17,7 +17,7 @@ def test_token_error():
     with pytest.raises(CyberTokenError):
         cyber.exec("print 'unterminated string")
 
-    assert cyber.last_result == CyResultCode.CY_ErrorToken
+    assert cyber.last_result == CsResultCode.CS_ERROR_TOKEN
 
 
 def test_parse_error():
@@ -32,7 +32,7 @@ def test_parse_error():
     with pytest.raises(CyberParseError):
         cyber.exec(script)
 
-    assert cyber.last_result == CyResultCode.CY_ErrorParse
+    assert cyber.last_result == CsResultCode.CS_ERROR_PARSE
 
 
 def test_compile_error():
@@ -45,16 +45,16 @@ def test_compile_error():
     with pytest.raises(CyberCompileError):
         cyber.exec(script)
 
-    assert cyber.last_result == CyResultCode.CY_ErrorCompile
+    assert cyber.last_result == CsResultCode.CS_ERROR_COMPILE
 
 
 def test_panic_error():
     cyber = CyberVM()
 
     with pytest.raises(CyberPanicError):
-        cyber.exec('panic(#danger)')
+        cyber.exec('panic(error.danger)')
 
-    assert cyber.last_result == CyResultCode.CY_ErrorPanic
+    assert cyber.last_result == CsResultCode.CS_ERROR_PANIC
 
 
 # TODO: how do I trigger this?
@@ -66,4 +66,4 @@ def test_panic_error():
 #     with pytest.raises(CyberUnknownError):
 #         cyber.exec(script)
 
-#     assert cyber.last_result == CyResultCode.CY_ErrorUnknown
+#     assert cyber.last_result == CsResultCode.CY_ErrorUnknown

@@ -1,4 +1,4 @@
-from cyber import CyberVM, CyResultCode, CyType, CyValue
+from cyber import CyberVM, CsResultCode, CsType, CsValue
 
 
 def test_eval_none():
@@ -6,9 +6,9 @@ def test_eval_none():
 
     output = cyber.eval('none')
 
-    assert output == None
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeNone
+    assert output is None
+    assert cyber.last_result == CsResultCode.CS_SUCCESS
+    assert cyber.last_output_type == CsType.CS_TYPE_NONE
 
 
 def test_eval_bool():
@@ -16,15 +16,15 @@ def test_eval_bool():
 
     output = cyber.eval('true')
 
-    assert output == True
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeBoolean
+    assert output is True
+    assert cyber.last_result == CsResultCode.CS_SUCCESS
+    assert cyber.last_output_type == CsType.CS_TYPE_BOOLEAN
 
     output = cyber.eval('false')
 
-    assert output == False
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeBoolean
+    assert output is False
+    assert cyber.last_result == CsResultCode.CS_SUCCESS
+    assert cyber.last_output_type == CsType.CS_TYPE_BOOLEAN
 
 
 def test_eval_int():
@@ -38,14 +38,14 @@ def test_eval_number():
     output = cyber.eval('1')
 
     assert output == 1
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeFloat
+    assert cyber.last_result == CsResultCode.CS_SUCCESS
+    assert cyber.last_output_type == CsType.CS_TYPE_INTEGER
 
     output = cyber.eval('1.5')
 
     assert output == 1.5
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeFloat
+    assert cyber.last_result == CsResultCode.CS_SUCCESS
+    assert cyber.last_output_type == CsType.CS_TYPE_FLOAT
 
 
 def test_eval_cyvalue():
@@ -59,93 +59,16 @@ def test_eval_cyvalue():
     """
     output = cyber.eval(script)
 
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeLambda
-    assert type(output) == CyValue
+    assert cyber.last_result == CsResultCode.CS_SUCCESS
+    assert cyber.last_output_type == CsType.CS_TYPE_LAMBDA
+    assert type(output) == CsValue
 
 
-def test_eval_static_a_string():
+def test_eval_string():
     cyber = CyberVM()
 
     output = cyber.eval("'string'")
 
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeStaticAstring
+    assert cyber.last_result == CsResultCode.CS_SUCCESS
+    assert cyber.last_output_type == CsType.CS_TYPE_STRING
     assert output == 'string'
-
-
-def test_eval_static_u_string():
-    cyber = CyberVM()
-
-    output = cyber.eval("'💕'")
-
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeStaticUstring
-    assert output == '💕'
-
-
-def test_eval_a_string():
-    cyber = CyberVM()
-    script = """
-    var t = 'string'
-    var s = '{t} interpolation'
-    s
-    """
-    output = cyber.eval(script)
-
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeAstring
-    assert output == 'string interpolation'
-
-
-def test_eval_u_string():
-    cyber = CyberVM()
-    script = """
-    var t = '💕'
-    var s = '{t} interpolation'
-    s
-    """
-    output = cyber.eval(script)
-
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeUstring
-    assert output == '💕 interpolation'
-
-
-def test_eval_string_slice():
-    cyber = CyberVM()
-
-    script = """
-    var t = 'string'
-    var s = '{t}'
-    s[..3]
-    """
-    output = cyber.eval(script)
-
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeStringSlice
-    assert output == 'str'
-
-
-def test_eval_rawstring():
-    cyber = CyberVM()
-
-    output = cyber.eval("rawstring('rawstring')")
-
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeRawString
-    assert output == b'rawstring'
-
-
-def test_eval_rawstring_slice():
-    cyber = CyberVM()
-
-    script = """
-    var t = rawstring('rawstring')
-    t[3..]
-    """
-    output = cyber.eval(script)
-
-    assert cyber.last_result == CyResultCode.CY_Success
-    assert cyber.last_output_type == CyType.CY_TypeRawStringSlice
-    assert output == b'string'

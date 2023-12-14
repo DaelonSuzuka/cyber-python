@@ -4,16 +4,17 @@ from io import BytesIO
 from zipfile import ZipFile
 
 
-BASE_LIB_URL = 'https://github.com/fubark/cyber/releases/download/latest/'
-ZIP_URL = 'https://github.com/fubark/cyber/archive/refs/tags/latest.zip'
+VERSION = '0.3'
+
+BASE_LIB_URL = f'https://github.com/fubark/cyber/releases/download/{VERSION}/'
+ZIP_URL = f'https://github.com/fubark/cyber/archive/refs/tags/{VERSION}.zip'
 
 
 lib_urls = [
-    'libcyber.so',
-    # 'libcyber.so',
-    'libcyber.dylib',
-    'libcyber-arm64.dylib',
-    'cyber.dll',
+    'libcyber-linux-x64.a',
+    'libcyber-macos-arm64.a',
+    'libcyber-macos-x64.a',
+    'libcyber-windows-x64.lib',
 ]
 
 
@@ -23,7 +24,7 @@ dst_dir = Path('cyber/lib')
 r = urlopen(ZIP_URL)
 myzip = ZipFile(BytesIO(r.read()))
 with open(dst_dir / 'cyber.h', 'wb') as f:
-    f.write(myzip.open('cyber-latest/src/cyber.h').read())
+    f.write(myzip.open(f'cyber-{VERSION}/src/include/cyber.h').read())
 
 
 for path in lib_urls:

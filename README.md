@@ -5,6 +5,8 @@
 [![PyPI status](https://img.shields.io/pypi/status/cyberlang.svg)](https://github.com/qtstrap/qtstrap)
 [![discord](https://img.shields.io/discord/828041790711136274)](https://discord.gg/Ky8vNZJvAT)
 
+Built with cyberlang 0.3
+
 ## Installation
 
 ```

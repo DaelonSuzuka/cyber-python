@@ -4,12 +4,15 @@ from ctypes import (
 )
 import inspect
 from .lib import (
-    CStr,
-    CyFunc,
-    CyValue,
-    CyType,
-    CyResultCode,
-    CyLoadModuleFunc,
+    CsPrintFn,
+    CsFuncFn,
+    CsStr,
+    CsValue,
+    CsType,
+    CsResultCode,
+    csSetModuleLoader,
+    csGetPrint,
+    csSetPrint,
 )
 from . import lib
 from textwrap import dedent
@@ -31,53 +34,43 @@ class CyberUnknownError(Exception):
     ...
 
 
-def cstr(s) -> CStr:
+def cstr(s) -> CsStr:
     if isinstance(s, str):
         s = dedent(s).encode()
-    return CStr(c_char_p(s), len(s))
+    return CsStr(c_char_p(s), len(s))
 
 
-def py_to_cyvalue(vm, value) -> CyValue:
+def py_to_cyvalue(vm, value) -> CsValue:
     match type(value):
         case builtins.bool:
-            return lib.cyValueTrue() if value else lib.cyValueFalse()
+            return lib.csTrue() if value else lib.csFalse()
         case builtins.int:
-            return lib.cyValueInteger(value)
+            return lib.csInteger(value)
         case builtins.float:
-            return lib.cyValueFloat(value)
+            return lib.csFloat(value)
         case builtins.str:
-            return lib.cyValueGetOrAllocStringInfer(vm, cstr(value))
+            return lib.csNewString(vm, cstr(value))
         case _:
-            return lib.cyValueNone()
+            return lib.csNone()
 
 
 def cyvalue_to_py(vm, cyvalue):
-    match CyType(lib.cyValueGetTypeId(cyvalue).value):
-        case CyType.CY_TypeNone:
+    match CsType(lib.csGetTypeId(cyvalue).value):
+        case CsType.CS_TYPE_NONE:
             return None
-        case CyType.CY_TypeBoolean:
-            return lib.cyValueAsBool(cyvalue)
-        case CyType.CY_TypeInteger:
-            return lib.cyValueAsInteger(cyvalue)
-        case CyType.CY_TypeFloat:
-            return lib.cyValueAsFloat(cyvalue)
-        case CyType.CY_TypeStaticAstring:
-            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
-        case CyType.CY_TypeStaticUstring:
-            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
-        case CyType.CY_TypeAstring:
-            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
-        case CyType.CY_TypeUstring:
-            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
-        case CyType.CY_TypeStringSlice:
-            return lib.cyValueToTempString(vm, cyvalue).charz.decode()
-        case CyType.CY_TypeRawString:
-            return lib.cyValueToTempRawString(vm, cyvalue).charz
-        case CyType.CY_TypeRawStringSlice:
-            return lib.cyValueToTempRawString(vm, cyvalue).charz
-        case CyType.CY_TypeList:
-            length = lib.cyListLen(cyvalue)
-            cylist = [lib.cyListGet(vm, cyvalue, i) for i in range(length)]
+        case CsType.CS_TYPE_BOOLEAN:
+            return lib.csAsBool(cyvalue)
+        case CsType.CS_TYPE_INTEGER:
+            return lib.csAsInteger(cyvalue)
+        case CsType.CS_TYPE_FLOAT:
+            return lib.csAsFloat(cyvalue)
+        case CsType.CS_TYPE_STRING:
+            return lib.csToTempString(vm, cyvalue).buf.decode()
+        # case CsType.CS_TYPE_ARRAY:
+        #     return lib.csToTempByteArray(vm, cyvalue).buf
+        case CsType.CS_TYPE_LIST:
+            length = lib.csListLen(cyvalue)
+            cylist = [lib.csListGet(vm, cyvalue, i) for i in range(length)]
             return [cyvalue_to_py(vm, cyval) for cyval in cylist]
         case _:
             return cyvalue
@@ -85,9 +78,9 @@ def cyvalue_to_py(vm, cyvalue):
 
 def generate_callback_wrapper(func):
     sig = inspect.signature(func)
-    return_type = sig.return_annotation
+    # return_type = sig.return_annotation
 
-    @CyFunc
+    @CsFuncFn
     def wrapper(vm, args, nargs):
         # convert args based on registered function signature
         _args = []
@@ -99,14 +92,14 @@ def generate_callback_wrapper(func):
                 continue
             match param.annotation:
                 case builtins.str:
-                    _args.append(lib.cyValueToTempString(vm, args[i]).charz.decode())
+                    _args.append(lib.csToTempString(vm, args[i]).buf.decode())
                 case builtins.int:
-                    _args.append(int(lib.cyValueAsFloat(args[i])))
+                    _args.append(int(lib.csAsFloat(args[i])))
                 case builtins.float:
-                    _args.append(lib.cyValueAsFloat(args[i]))
+                    _args.append(lib.csAsFloat(args[i]))
                 case builtins.bool:
-                    _args.append(lib.cyValueToBool(args[i]))
-                case lib.CyValue: # raw lib.cyValue
+                    _args.append(lib.csToBool(args[i]))
+                case lib.CsValue: # raw lib.cs
                     _args.append(args[i])
                 case _: # no type specified, try to auto-convert
                     _args.append(cyvalue_to_py(vm, args[i]))
@@ -124,38 +117,38 @@ def generate_callback_wrapper(func):
         # convert return type
         # match return_type:
             # case None:
-            #     ret = lib.cyValueNone()
+            #     ret = lib.csNone()
             # case builtins.str:
-            #     ret = lib.cyValueGetOrAllocStringInfer(vm, cstr(raw_ret))
+            #     ret = lib.csGetOrAllocStringInfer(vm, cstr(raw_ret))
 
         return ret
 
     return wrapper
 
 
-class Module:
-    def __init__(self, cyber, name, contents) -> None:
-        self.cyber = cyber
-        self.name = name
-        self.functions = contents['funcs']
-        self.variables = contents['vars']
-        self.build()
+# class Module:
+#     def __init__(self, cyber, name, contents) -> None:
+#         self.cyber = cyber
+#         self.name = name
+#         self.functions = contents['funcs']
+#         self.variables = contents['vars']
+#         self.build()
 
-    def build(self):
-        @CyLoadModuleFunc
-        def load_module(vm, mod):
-            # print(f'[ContextModule]: loading module: {self.name}')
-            for func_info in self.functions:
-                # print(f'[ContextModule]: registering function: {name}')
-                self.cyber.set_module_func(mod, *func_info)
+#     def build(self):
+#         @CsLoadModuleFunc
+#         def load_module(vm, mod):
+#             # print(f'[ContextModule]: loading module: {self.name}')
+#             for func_info in self.functions:
+#                 # print(f'[ContextModule]: registering function: {name}')
+#                 self.cyber.set_module_func(mod, *func_info)
 
-            for var_info in self.variables:
-                self.cyber.set_module_var(mod, *var_info)
+#             for var_info in self.variables:
+#                 self.cyber.set_module_var(mod, *var_info)
 
-            return True
+#             return True
 
-        self.load_module = load_module
-        self.cyber.add_module_loader(self.name, load_module)
+#         self.load_module = load_module
+#         self.cyber.add_module_loader(self.name, load_module)
 
 
 class CyberVM:
@@ -164,42 +157,56 @@ class CyberVM:
         self.last_output_type = None
         self.last_output = None
 
-        self.vm = lib.cyVmCreate()
+        self.vm = lib.csCreate()
         self.modules = []
         self.pending_modules = {}
         self.pending_module_classes = []
 
-    def add_module_loader(self, name, loader):
-        lib.cyVmAddModuleLoader(self.vm, cstr(name), loader)
+    def get_print(self):
+        return csGetPrint(self.vm)
 
-    def set_module_func(self, mod, name, nargs, func):
-        lib.cyVmSetModuleFunc(self.vm, mod, cstr(name), nargs, func)
+    def set_print(self, func):
+        print('set_print')
 
-    def set_module_var(self, mod, name, value):
-        lib.cyVmSetModuleVar(self.vm, mod, cstr(name), py_to_cyvalue(self.vm, value))
+        @CsPrintFn
+        def wrapper(vm, a):
+            print('wrapper')
+            # print(lib.csToTempString(vm, a).buf.decode())
 
-    def _ensure_module(self, module_name):
-        if module_name not in self.pending_modules:
-            self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
+        print(wrapper)
+        csSetPrint(self.vm, wrapper)
+
+    # def add_module_loader(self, name, loader):
+    #     lib.csVmAddModuleLoader(self.vm, cstr(name), loader)
+
+    # def set_module_func(self, mod, name, nargs, func):
+    #     lib.cyVmSetModuleFunc(self.vm, mod, cstr(name), nargs, func)
+
+    # def set_module_var(self, mod, name, value):
+    #     lib.cyVmSetModuleVar(self.vm, mod, cstr(name), py_to_cyvalue(self.vm, value))
+
+    # def _ensure_module(self, module_name):
+    #     if module_name not in self.pending_modules:
+    #         self.pending_modules[module_name] = {'funcs':[], 'vars':[]}
     
-    def generate_wrappers(self, module_name, func_name, func):
-        sig = inspect.signature(func)
-        nargs = len(sig.parameters)
-        # TODO: probably not a robust way to do this
-        if 'self' in sig.parameters:
-            nargs = nargs - 1
-        sigs = [nargs]
+    # def generate_wrappers(self, module_name, func_name, func):
+    #     sig = inspect.signature(func)
+    #     nargs = len(sig.parameters)
+    #     # TODO: probably not a robust way to do this
+    #     if 'self' in sig.parameters:
+    #         nargs = nargs - 1
+    #     sigs = [nargs]
 
-        optionals = 0
-        for name, param in sig.parameters.items():
-            if param.default != inspect._empty:
-                optionals += 1
-                sigs.append(nargs - optionals)
+    #     optionals = 0
+    #     for name, param in sig.parameters.items():
+    #         if param.default != inspect._empty:
+    #             optionals += 1
+    #             sigs.append(nargs - optionals)
 
-        wrapper = generate_callback_wrapper(func)
+    #     wrapper = generate_callback_wrapper(func)
 
-        for n in sigs:
-            self.pending_modules[module_name]['funcs'].append((func_name, n, wrapper))
+    #     for n in sigs:
+    #         self.pending_modules[module_name]['funcs'].append((func_name, n, wrapper))
 
     def function(self, name):
         if isinstance(name, str):
@@ -207,18 +214,18 @@ class CyberVM:
             func_name = name
             if '.' in name:
                 module_name, func_name = name.split('.')
-            self._ensure_module(module_name)
+            # self._ensure_module(module_name)
             def _decorator(func):
-                self.generate_wrappers(module_name, func_name, func)
+                # self.generate_wrappers(module_name, func_name, func)
                 return func
             return _decorator
         else:
             # we ARE the decorator
             func = name
-            module_name = 'core'
-            self._ensure_module(module_name)
-            func_name = func.__name__
-            self.generate_wrappers(module_name, func_name, func)
+            # module_name = 'core'
+            # self._ensure_module(module_name)
+            # func_name = func.__name__
+            # self.generate_wrappers(module_name, func_name, func)
             return func
         
     def variable(self, name, value):
@@ -227,7 +234,7 @@ class CyberVM:
         if '.' in name:
             module_name, var_name = name.split('.')
 
-        self._ensure_module(module_name)
+        # self._ensure_module(module_name)
         self.pending_modules[module_name]['vars'].append((var_name, value))
 
     def module(self, name):
@@ -251,76 +258,76 @@ class CyberVM:
             self.pending_module_classes.append(kls)
             return kls
 
-    def build_pending_modules(self):
-        def get_funcs(klass):
-            for func in [m for m in dir(klass) if callable(getattr(klass, m)) and not m.startswith('__')]:
-                dec = self.function(f'{klass._name}.{func}')
-                dec(getattr(klass, func))
+    # def build_pending_modules(self):
+    #     def get_funcs(klass):
+    #         for func in [m for m in dir(klass) if callable(getattr(klass, m)) and not m.startswith('__')]:
+    #             dec = self.function(f'{klass._name}.{func}')
+    #             dec(getattr(klass, func))
 
-        def get_vars(klass):
-            for var in [m for m in dir(klass) if not callable(getattr(klass, m)) and not m.startswith('__')]:
-                self.variable(f'{klass._name}.{var}', getattr(klass, var))
+    #     def get_vars(klass):
+    #         for var in [m for m in dir(klass) if not callable(getattr(klass, m)) and not m.startswith('__')]:
+    #             self.variable(f'{klass._name}.{var}', getattr(klass, var))
 
-        for klass in self.pending_module_classes:
-            get_funcs(klass)
-            get_vars(klass)
-            for sub in klass.__subclasses__():
-                get_funcs(sub)
-                get_vars(sub)
+    #     for klass in self.pending_module_classes:
+    #         get_funcs(klass)
+    #         get_vars(klass)
+    #         for sub in klass.__subclasses__():
+    #             get_funcs(sub)
+    #             get_vars(sub)
 
-        for module_name, contents in self.pending_modules.items():
-            mod = Module(self, module_name, contents)
-            self.modules.append(mod)
+    #     for module_name, contents in self.pending_modules.items():
+    #         mod = Module(self, module_name, contents)
+    #         self.modules.append(mod)
 
-        self.pending_modules.clear()
-        self.pending_module_classes.clear()
+    #     self.pending_modules.clear()
+    #     self.pending_module_classes.clear()
 
     def validate(self, src: str | bytes):
-        self.build_pending_modules()
+        # self.build_pending_modules()
 
         self.last_output_type = None
         self.last_output = None
-        result = lib.cyVmValidate(self.vm, cstr(src))
-        self.last_result = CyResultCode(result)
-        return lib.cyVmGetLastErrorReport(self.vm).charz
-        # if self.last_result != CyResultCode.CY_Success:
+        result = lib.csValidate(self.vm, cstr(src))
+        self.last_result = CsResultCode(result)
+        return lib.csNewLastErrorReport(self.vm)
+        # if self.last_result != CsResultCode.CS_SUCCESS:
         #     match self.last_result:
-        #         case CyResultCode.CY_ErrorToken:
+        #         case CsResultCode.CS_ERROR_TOKEN:
         #             raise CyberTokenError
-        #         case CyResultCode.CY_ErrorParse:
+        #         case CsResultCode.CS_ERROR_PARSE:
         #             raise CyberParseError
-        #         case CyResultCode.CY_ErrorCompile:
+        #         case CsResultCode.CS_ERROR_COMPILE:
         #             raise CyberCompileError
-        #         case CyResultCode.CY_ErrorPanic:
+        #         case CsResultCode.CS_ERROR_PANIC:
         #             raise CyberPanicError
-        #         case CyResultCode.CY_ErrorUnknown:
+        #         case CsResultCode.CS_ERROR_UNKNOWN:
         #             raise CyberUnknownError
         #     raise CyberUnknownError
         
     def eval(self, src: str | bytes):
-        self.build_pending_modules()
+        # self.build_pending_modules()
 
         self.last_output_type = None
         self.last_output = None
-        out = CyValue()
-        result = lib.cyVmEval(self.vm, cstr(src), pointer(out))
-        self.last_result = CyResultCode(result)
-        if self.last_result != CyResultCode.CY_Success:
-            report = lib.cyVmGetLastErrorReport(self.vm).charz
+        out = CsValue()
+        result = lib.csEval(self.vm, cstr(src), pointer(out))
+        self.last_result = CsResultCode(result)
+        if self.last_result != CsResultCode.CS_SUCCESS:
+            report = lib.csNewLastErrorReport(self.vm)
             match self.last_result:
-                case CyResultCode.CY_ErrorToken:
+                case CsResultCode.CS_ERROR_TOKEN:
                     raise CyberTokenError(report)
-                case CyResultCode.CY_ErrorParse:
+                case CsResultCode.CS_ERROR_PARSE:
                     raise CyberParseError(report)
-                case CyResultCode.CY_ErrorCompile:
+                case CsResultCode.CS_ERROR_COMPILE:
                     raise CyberCompileError(report)
-                case CyResultCode.CY_ErrorPanic:
+                case CsResultCode.CS_ERROR_PANIC:
                     raise CyberPanicError(report)
-                case CyResultCode.CY_ErrorUnknown:
+                case CsResultCode.CS_ERROR_UNKNOWN:
                     raise CyberUnknownError(report)
             raise CyberUnknownError
         
-        self.last_output_type = CyType(lib.cyValueGetTypeId(out).value)
+        self.last_output_type = CsType(lib.csGetTypeId(out).value)
         self.last_output = cyvalue_to_py(self.vm, out)
         return self.last_output
 

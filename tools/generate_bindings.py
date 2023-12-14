@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 
 
 class Writer:
@@ -63,57 +64,10 @@ for m in matches:
 
 w = Writer()
 
-w += '# GENERATED FILE DO NOT EDIT #'
-w += ''
-w += 'from ctypes import ('
-with w:
-    w += 'Structure,'
-    w += 'Union,'
-    w += 'CFUNCTYPE,'
-    w += 'POINTER,'
-    w += 'c_void_p,'
-    w += 'c_char_p,'
-    w += 'c_bool,'
-    w += 'c_size_t,'
-    w += 'c_int,'
-    w += 'c_double,'
-    w += 'c_uint64,'
-    w += 'c_uint32,'
-    w += 'c_uint8,'
-w += ')'
-w += 'from pathlib import Path'
-w += 'import sys'
-w += 'from enum import Enum'
-w += 'import platform'
-w += ''
-
-# TODO: add linux-arm64 support
-w += """
-base_path = Path(__file__).parent / 'lib'
-
-if sys.platform == 'win32':
-    from ctypes import WinDLL
-    path = base_path / 'cyber.dll'
-    lib = WinDLL(path.as_posix())
-elif sys.platform == 'linux':
-    from ctypes import CDLL
-    path = base_path / 'libcyber.so'
-    lib = CDLL(path.as_posix())
-elif sys.platform == 'darwin':
-    if platform.machine() == 'arm64':
-        from ctypes import CDLL
-        path = base_path / 'libcyber-arm64.dylib'
-        lib = CDLL(path.as_posix())
-    else:
-        from ctypes import CDLL
-        path = base_path / 'libcyber.dylib'
-        lib = CDLL(path.as_posix())
-"""
-w += ''
-w += '# GENERATED FILE DO NOT EDIT #'
-w += ''
+w += open(Path(__file__).parent / 'bindings_preamble.py').read()
 
 types = {
+    'void': 'None',
     'bool': 'c_bool',
     'double': 'c_double',
     'void*': 'c_void_p',
@@ -121,15 +75,21 @@ types = {
     'const char*': 'c_char_p',
     'size_t': 'c_size_t',
     'uint8_t': 'c_uint8',
-    'uint64_t': 'c_uint64',
+    'uint8_t*': 'POINTER(c_uint8)',
     'uint32_t': 'c_uint32',
+    'uint64_t': 'c_uint64',
+    'int8_t': 'c_int8',
+    'int32_t': 'c_int32',
+    'int64_t': 'c_int64',
     'int': 'c_int',
-    'CyResultCode': 'c_int',
+    'CsResultCode': 'c_int',
 }
 
 
 def typedef_int(w, d):
     m = re.match(r'typedef (\w+) (\w*)', d)
+    if m is None:
+        return
     t = m[1]
     types[f'{m[2]}*'] = f'POINTER({m[2]})'
     w += f'class {m[2]}({types.get(t, t)}):'
@@ -139,20 +99,27 @@ def typedef_int(w, d):
 
 def typedef_struct(w, d):
     m = re.match(r'typedef (struct|union) (\w+) ({.*})?', d.replace('\n', ''))
+    if m is None:
+        return
     def_type = m[1]
     struct_name = m[2]
     body = m[3]
     types[f'{struct_name}*'] = f'POINTER({struct_name})'
+    if struct_name == 'CsTypeResult':
+        w += f'class {struct_name}(Structure):'
+        with w:
+            w += "..."
+        return
     fields = []
     if body:
         for f in body[1:-1].split(';'):
             if f:
-                parts = f.strip().split(' ')
+                parts = f.strip().replace('const ', '').split(' ')
                 name = parts[-1]
                 c_type = ' '.join(parts[:-1])
                 py_type = types.get(c_type, c_type)
                 fields.append(f"('{name}', {py_type})")
-    
+
     if def_type == 'union':
         # TODO: actually support unions
         # TODO: probably requires supporting arbitrarily nested struct/union defs
@@ -172,44 +139,59 @@ def typedef_struct(w, d):
 
 def typedef_enum(w, d):
     m = re.match(r'typedef enum ({.*})? (\w+);', d.replace('\n', ''))
+    if m is None:
+        return
     values = m[1]
     enum_name = m[2]
     items = [v.strip().replace(' = 0', '') for v in values[1:-1].split(',') if v]
 
     w += f'class {enum_name}(Enum):'
     with w:
+        # w += f'"""{d}"""'
         for i, item in enumerate(items):
             w += f'{item} = {i}'
 
 
 def typedef_funcptr_def(w, d):
     m = re.match(r'typedef (\w+) \(\*(\w+)\)(.*);', d)
+    if m is None:
+        return
     type_name = m[2]
     args = m[3][1:-1].split(', ')
-    arg_types = [a.split(' ')[0] for a in args]
+    arg_types = [a.replace('const ', '').split(' ')[0] for a in args]
     argtypes = [types.get(m[1], m[1])]
     for arg in arg_types:
         argtypes.append(types.get(arg, arg))
 
-    w += f'# {d}'
     w += f'{type_name} = CFUNCTYPE({", ".join(argtypes)})'
+    w += f'"""{d}"""'
 
 
 def func_def(w, d):
-    m = re.match(r'(\w+\*?) (\w+)(.*);', d)
+    m = re.match(r'((?:const\s)?\w+\*?) (\w+)(.*);', d)
+    if m is None:
+        return
     func_name = m[2]
     ret = m[1]
     args = m[3][1:-1].split(', ')
-    arg_types = [a.split(' ')[0] for a in args]
+    arg_types = [a.replace('const ', '').split(' ')[0] for a in args]
     argtypes = []
     for arg in arg_types:
         argtypes.append(types.get(arg, arg))
 
-    w += f'# {d}'
     w += f'{func_name} = lib.{func_name}'
+    w += f'"""{d}"""'
     if ret != 'void':
         w += f'{func_name}.restype = {types.get(ret, ret)}'
     w += f'{func_name}.argtypes = [{", ".join(argtypes)}]'
+
+
+def extern_bool(w, d):
+    m = re.match(r'extern bool (.+);', d)
+    if m is None:
+        return
+    w += f'# {m[1]} = lib.{m[1]}'
+    w += f'"""{d}"""'
 
 
 for d in definitions:
@@ -227,7 +209,10 @@ for d in definitions:
     else:
         if '=' in d:
             continue
-        func_def(w, d)
+        elif 'extern bool' in d:
+            extern_bool(w, d)
+        else:
+            func_def(w, d)
     w += ''
 
 with open('cyber/lib.py', 'w') as f:
